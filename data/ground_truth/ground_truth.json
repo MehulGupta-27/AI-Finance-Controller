@@ -1,0 +1,1611 @@
+[
+  {
+    "case_id": "case_0000",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED23434"
+    ],
+    "rzp_ids": [
+      "pay_3104c0024e4d49"
+    ],
+    "utr_numbers": [
+      "UTR914655221101"
+    ]
+  },
+  {
+    "case_id": "case_0001",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED83563"
+    ],
+    "rzp_ids": [
+      "pay_8d2245b66ef044"
+    ],
+    "utr_numbers": [
+      "UTR886833016361"
+    ]
+  },
+  {
+    "case_id": "case_0002",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED54597"
+    ],
+    "rzp_ids": [
+      "pay_f9a02ef634a945"
+    ],
+    "utr_numbers": [
+      "UTR268697172873"
+    ]
+  },
+  {
+    "case_id": "case_0003",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED15695"
+    ],
+    "rzp_ids": [
+      "pay_576f75c4168c42"
+    ],
+    "utr_numbers": [
+      "UTR605645347792"
+    ]
+  },
+  {
+    "case_id": "case_0004",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED19116"
+    ],
+    "rzp_ids": [
+      "pay_99054e0949484d"
+    ],
+    "utr_numbers": [
+      "UTR826046287257"
+    ]
+  },
+  {
+    "case_id": "case_0005",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED31319"
+    ],
+    "rzp_ids": [
+      "pay_6176f8ae885c4d"
+    ],
+    "utr_numbers": [
+      "UTR488136971784"
+    ]
+  },
+  {
+    "case_id": "case_0006",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED31417"
+    ],
+    "rzp_ids": [
+      "pay_aa04f71357bd44"
+    ],
+    "utr_numbers": [
+      "UTR518597220210"
+    ]
+  },
+  {
+    "case_id": "case_0007",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED51347"
+    ],
+    "rzp_ids": [
+      "pay_d9ccd5e8a0504e"
+    ],
+    "utr_numbers": [
+      "UTR393780765787"
+    ]
+  },
+  {
+    "case_id": "case_0008",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED44718"
+    ],
+    "rzp_ids": [
+      "pay_c76289ecee2740"
+    ],
+    "utr_numbers": [
+      "UTR371182647325"
+    ]
+  },
+  {
+    "case_id": "case_0009",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED76784"
+    ],
+    "rzp_ids": [
+      "pay_96a769ba01ef4f"
+    ],
+    "utr_numbers": [
+      "UTR200903882207"
+    ]
+  },
+  {
+    "case_id": "case_0010",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED60019"
+    ],
+    "rzp_ids": [
+      "pay_71944bf6f0de4d"
+    ],
+    "utr_numbers": [
+      "UTR681830843906"
+    ]
+  },
+  {
+    "case_id": "case_0011",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED24621"
+    ],
+    "rzp_ids": [
+      "pay_bfc509f24f4847"
+    ],
+    "utr_numbers": [
+      "UTR578001943304"
+    ]
+  },
+  {
+    "case_id": "case_0012",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED93748"
+    ],
+    "rzp_ids": [
+      "pay_80711d4aecae44"
+    ],
+    "utr_numbers": [
+      "UTR767900326356"
+    ]
+  },
+  {
+    "case_id": "case_0013",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED74042"
+    ],
+    "rzp_ids": [
+      "pay_2938857068fe42"
+    ],
+    "utr_numbers": [
+      "UTR220342736258"
+    ]
+  },
+  {
+    "case_id": "case_0014",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED19071"
+    ],
+    "rzp_ids": [
+      "pay_b1f6a457e9304a"
+    ],
+    "utr_numbers": [
+      "UTR937424066816"
+    ]
+  },
+  {
+    "case_id": "case_0015",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED37760"
+    ],
+    "rzp_ids": [
+      "pay_0dedb11902cb4c"
+    ],
+    "utr_numbers": [
+      "UTR696695139934"
+    ]
+  },
+  {
+    "case_id": "case_0016",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED77839"
+    ],
+    "rzp_ids": [
+      "pay_6a77b721079f46"
+    ],
+    "utr_numbers": [
+      "UTR230788137103"
+    ]
+  },
+  {
+    "case_id": "case_0017",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED19305"
+    ],
+    "rzp_ids": [
+      "pay_01ac645cefc149"
+    ],
+    "utr_numbers": [
+      "UTR794529888366"
+    ]
+  },
+  {
+    "case_id": "case_0018",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED38080"
+    ],
+    "rzp_ids": [
+      "pay_418f2783328641"
+    ],
+    "utr_numbers": [
+      "UTR244049912883"
+    ]
+  },
+  {
+    "case_id": "case_0019",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED56438"
+    ],
+    "rzp_ids": [
+      "pay_68a5b95012ca4e"
+    ],
+    "utr_numbers": [
+      "UTR552790822417"
+    ]
+  },
+  {
+    "case_id": "case_0020",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED35112"
+    ],
+    "rzp_ids": [
+      "pay_4a743c6318ad40"
+    ],
+    "utr_numbers": [
+      "UTR689227460591"
+    ]
+  },
+  {
+    "case_id": "case_0021",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED16630"
+    ],
+    "rzp_ids": [
+      "pay_e5c9f9cc222b48"
+    ],
+    "utr_numbers": [
+      "UTR281403868608"
+    ]
+  },
+  {
+    "case_id": "case_0022",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED44760"
+    ],
+    "rzp_ids": [
+      "pay_25d2da10162140"
+    ],
+    "utr_numbers": [
+      "UTR962972824015"
+    ]
+  },
+  {
+    "case_id": "case_0023",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED51104"
+    ],
+    "rzp_ids": [
+      "pay_f3f145c0977e4c"
+    ],
+    "utr_numbers": [
+      "UTR151785130539"
+    ]
+  },
+  {
+    "case_id": "case_0024",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED98501"
+    ],
+    "rzp_ids": [
+      "pay_7082a1fb6f5f4c"
+    ],
+    "utr_numbers": [
+      "UTR361399523052"
+    ]
+  },
+  {
+    "case_id": "case_0025",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED44179"
+    ],
+    "rzp_ids": [
+      "pay_8e4d0663bc344a"
+    ],
+    "utr_numbers": [
+      "UTR835316694200"
+    ]
+  },
+  {
+    "case_id": "case_0026",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED19508"
+    ],
+    "rzp_ids": [
+      "pay_14c8710f085f4e"
+    ],
+    "utr_numbers": [
+      "UTR602551183219"
+    ]
+  },
+  {
+    "case_id": "case_0027",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED58434"
+    ],
+    "rzp_ids": [
+      "pay_394138696dac4f"
+    ],
+    "utr_numbers": [
+      "UTR273022703378"
+    ]
+  },
+  {
+    "case_id": "case_0028",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED27601"
+    ],
+    "rzp_ids": [
+      "pay_bd3cd86e45bb41"
+    ],
+    "utr_numbers": [
+      "UTR225689924079"
+    ]
+  },
+  {
+    "case_id": "case_0029",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED76244"
+    ],
+    "rzp_ids": [
+      "pay_cb06f08f4ba046"
+    ],
+    "utr_numbers": [
+      "UTR376976135264"
+    ]
+  },
+  {
+    "case_id": "case_0030",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED93507"
+    ],
+    "rzp_ids": [
+      "pay_9af45604f0d14d"
+    ],
+    "utr_numbers": [
+      "UTR391971008994"
+    ]
+  },
+  {
+    "case_id": "case_0031",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED81511"
+    ],
+    "rzp_ids": [
+      "pay_a86ff7e523534b"
+    ],
+    "utr_numbers": [
+      "UTR741535897688"
+    ]
+  },
+  {
+    "case_id": "case_0032",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED99399"
+    ],
+    "rzp_ids": [
+      "pay_34d6ba14465e4a"
+    ],
+    "utr_numbers": [
+      "UTR831216162375"
+    ]
+  },
+  {
+    "case_id": "case_0033",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED13248"
+    ],
+    "rzp_ids": [
+      "pay_385a5e724b2144"
+    ],
+    "utr_numbers": [
+      "UTR908224199827"
+    ]
+  },
+  {
+    "case_id": "case_0034",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED15075"
+    ],
+    "rzp_ids": [
+      "pay_6ff8f386fe484f"
+    ],
+    "utr_numbers": [
+      "UTR619083705463"
+    ]
+  },
+  {
+    "case_id": "case_0035",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED96511"
+    ],
+    "rzp_ids": [
+      "pay_e06e864668c240"
+    ],
+    "utr_numbers": [
+      "UTR538916150327"
+    ]
+  },
+  {
+    "case_id": "case_0036",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED13617"
+    ],
+    "rzp_ids": [
+      "pay_ba72d1200e3542"
+    ],
+    "utr_numbers": [
+      "UTR387635680418"
+    ]
+  },
+  {
+    "case_id": "case_0037",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED60488"
+    ],
+    "rzp_ids": [
+      "pay_4a5d8f9a9a984a"
+    ],
+    "utr_numbers": [
+      "UTR735223535913"
+    ]
+  },
+  {
+    "case_id": "case_0038",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED57739"
+    ],
+    "rzp_ids": [
+      "pay_69c2c5dda4804f"
+    ],
+    "utr_numbers": [
+      "UTR174866852259"
+    ]
+  },
+  {
+    "case_id": "case_0039",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED52753"
+    ],
+    "rzp_ids": [
+      "pay_749e2ca36efd40"
+    ],
+    "utr_numbers": [
+      "UTR866232475190"
+    ]
+  },
+  {
+    "case_id": "case_0040",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED90676"
+    ],
+    "rzp_ids": [
+      "pay_d47196cc7fcc49"
+    ],
+    "utr_numbers": [
+      "UTR433156770265"
+    ]
+  },
+  {
+    "case_id": "case_0041",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED70946"
+    ],
+    "rzp_ids": [
+      "pay_30efa4f1b97041"
+    ],
+    "utr_numbers": [
+      "UTR587228760932"
+    ]
+  },
+  {
+    "case_id": "case_0042",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED22240"
+    ],
+    "rzp_ids": [
+      "pay_f4b1d837637244"
+    ],
+    "utr_numbers": [
+      "UTR360924151492"
+    ]
+  },
+  {
+    "case_id": "case_0043",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED69692"
+    ],
+    "rzp_ids": [
+      "pay_2be544c1a5054d"
+    ],
+    "utr_numbers": [
+      "UTR734065014236"
+    ]
+  },
+  {
+    "case_id": "case_0044",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED65724"
+    ],
+    "rzp_ids": [
+      "pay_befba9172f8048"
+    ],
+    "utr_numbers": [
+      "UTR294213443847"
+    ]
+  },
+  {
+    "case_id": "case_0045",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED97500"
+    ],
+    "rzp_ids": [
+      "pay_a8e57a65c0624f"
+    ],
+    "utr_numbers": [
+      "UTR755235594840"
+    ]
+  },
+  {
+    "case_id": "case_0046",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED72216"
+    ],
+    "rzp_ids": [
+      "pay_fe3f51c5543f4a"
+    ],
+    "utr_numbers": [
+      "UTR385400876441"
+    ]
+  },
+  {
+    "case_id": "case_0047",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED47450"
+    ],
+    "rzp_ids": [
+      "pay_d9dade10bece43"
+    ],
+    "utr_numbers": [
+      "UTR397359885684"
+    ]
+  },
+  {
+    "case_id": "case_0048",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED18418"
+    ],
+    "rzp_ids": [
+      "pay_7f7216ce9aea42"
+    ],
+    "utr_numbers": [
+      "UTR548458442836"
+    ]
+  },
+  {
+    "case_id": "case_0049",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED85456"
+    ],
+    "rzp_ids": [
+      "pay_87f72449de054a"
+    ],
+    "utr_numbers": [
+      "UTR625619734196"
+    ]
+  },
+  {
+    "case_id": "case_0050",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED73993"
+    ],
+    "rzp_ids": [
+      "pay_272547ea337d44"
+    ],
+    "utr_numbers": [
+      "UTR397295152191"
+    ]
+  },
+  {
+    "case_id": "case_0051",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED71261"
+    ],
+    "rzp_ids": [
+      "pay_6748002d58e145"
+    ],
+    "utr_numbers": [
+      "UTR241388354666"
+    ]
+  },
+  {
+    "case_id": "case_0052",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED16590"
+    ],
+    "rzp_ids": [
+      "pay_2586dedfe90a42"
+    ],
+    "utr_numbers": [
+      "UTR517729190564"
+    ]
+  },
+  {
+    "case_id": "case_0053",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED20735"
+    ],
+    "rzp_ids": [
+      "pay_fb3196a4ac2747"
+    ],
+    "utr_numbers": [
+      "UTR119199821669"
+    ]
+  },
+  {
+    "case_id": "case_0054",
+    "case_type": "clean_triple_match",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED42411"
+    ],
+    "rzp_ids": [
+      "pay_18432e21853b46"
+    ],
+    "utr_numbers": [
+      "UTR782987331574"
+    ]
+  },
+  {
+    "case_id": "case_0055",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED31992"
+    ],
+    "rzp_ids": [
+      "pay_da7e6977fc5f4d"
+    ],
+    "utr_numbers": [
+      "UTR768322220181"
+    ]
+  },
+  {
+    "case_id": "case_0056",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED61990"
+    ],
+    "rzp_ids": [
+      "pay_8d89887df05648"
+    ],
+    "utr_numbers": [
+      "UTR890022600581"
+    ]
+  },
+  {
+    "case_id": "case_0057",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED55508"
+    ],
+    "rzp_ids": [
+      "pay_a68940787aa94c"
+    ],
+    "utr_numbers": [
+      "UTR570439558680"
+    ]
+  },
+  {
+    "case_id": "case_0058",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED57472"
+    ],
+    "rzp_ids": [
+      "pay_98d2bd8a05ae4c"
+    ],
+    "utr_numbers": [
+      "UTR606070444418"
+    ]
+  },
+  {
+    "case_id": "case_0059",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED67091"
+    ],
+    "rzp_ids": [
+      "pay_23ec3e8904c046"
+    ],
+    "utr_numbers": [
+      "UTR906705387446"
+    ]
+  },
+  {
+    "case_id": "case_0060",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED70910"
+    ],
+    "rzp_ids": [
+      "pay_0b4bbedd675d43"
+    ],
+    "utr_numbers": [
+      "UTR772462383766"
+    ]
+  },
+  {
+    "case_id": "case_0061",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED43862"
+    ],
+    "rzp_ids": [
+      "pay_0cb6b5910c9f4a"
+    ],
+    "utr_numbers": [
+      "UTR406404422214"
+    ]
+  },
+  {
+    "case_id": "case_0062",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED74038"
+    ],
+    "rzp_ids": [
+      "pay_06b3986021de44"
+    ],
+    "utr_numbers": [
+      "UTR935608119076"
+    ]
+  },
+  {
+    "case_id": "case_0063",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED63005"
+    ],
+    "rzp_ids": [
+      "pay_d6473bd8492841"
+    ],
+    "utr_numbers": [
+      "UTR369259175565"
+    ]
+  },
+  {
+    "case_id": "case_0064",
+    "case_type": "delayed_settlement",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED69473"
+    ],
+    "rzp_ids": [
+      "pay_30a90dc0bed649"
+    ],
+    "utr_numbers": [
+      "UTR436171026274"
+    ]
+  },
+  {
+    "case_id": "case_0065",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED35105"
+    ],
+    "rzp_ids": [
+      "pay_3da32892195b48"
+    ],
+    "utr_numbers": [
+      "UTR912678183898"
+    ]
+  },
+  {
+    "case_id": "case_0066",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED80010"
+    ],
+    "rzp_ids": [
+      "pay_87a8733f67b441"
+    ],
+    "utr_numbers": [
+      "UTR401191380396"
+    ]
+  },
+  {
+    "case_id": "case_0067",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED85243"
+    ],
+    "rzp_ids": [
+      "pay_71ee08b855bb43"
+    ],
+    "utr_numbers": [
+      "UTR616617303633"
+    ]
+  },
+  {
+    "case_id": "case_0068",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED62521"
+    ],
+    "rzp_ids": [
+      "pay_fc9e71733df44d"
+    ],
+    "utr_numbers": [
+      "UTR179421446737"
+    ]
+  },
+  {
+    "case_id": "case_0069",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED89471"
+    ],
+    "rzp_ids": [
+      "pay_4b3053f8b12b4d"
+    ],
+    "utr_numbers": [
+      "UTR970143739098"
+    ]
+  },
+  {
+    "case_id": "case_0070",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED89905"
+    ],
+    "rzp_ids": [
+      "pay_737cc5cd14214c"
+    ],
+    "utr_numbers": [
+      "UTR915872454727"
+    ]
+  },
+  {
+    "case_id": "case_0071",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED10350"
+    ],
+    "rzp_ids": [
+      "pay_c4e781ec8f9a46"
+    ],
+    "utr_numbers": [
+      "UTR595675808653"
+    ]
+  },
+  {
+    "case_id": "case_0072",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED40595"
+    ],
+    "rzp_ids": [
+      "pay_c300b35a50f34a"
+    ],
+    "utr_numbers": [
+      "UTR391730976567"
+    ]
+  },
+  {
+    "case_id": "case_0073",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED17816"
+    ],
+    "rzp_ids": [
+      "pay_06858cfee38747"
+    ],
+    "utr_numbers": [
+      "UTR968296026728"
+    ]
+  },
+  {
+    "case_id": "case_0074",
+    "case_type": "hard_garbled_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED67377"
+    ],
+    "rzp_ids": [
+      "pay_881bcdb2981143"
+    ],
+    "utr_numbers": [
+      "UTR757475491416"
+    ]
+  },
+  {
+    "case_id": "case_0075",
+    "case_type": "duplicate_capture",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED98117"
+    ],
+    "rzp_ids": [
+      "pay_b77eb0abed0645",
+      "pay_a89fd9d6e9ba41"
+    ],
+    "utr_numbers": [
+      "UTR395585753511"
+    ]
+  },
+  {
+    "case_id": "case_0076",
+    "case_type": "duplicate_capture",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED93202"
+    ],
+    "rzp_ids": [
+      "pay_30e33a8c570a4a",
+      "pay_3e7527d4b5864a"
+    ],
+    "utr_numbers": [
+      "UTR640368067420"
+    ]
+  },
+  {
+    "case_id": "case_0077",
+    "case_type": "duplicate_capture",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED74942"
+    ],
+    "rzp_ids": [
+      "pay_79934bf0957c47",
+      "pay_fc02817b8be449"
+    ],
+    "utr_numbers": [
+      "UTR827087359039"
+    ]
+  },
+  {
+    "case_id": "case_0078",
+    "case_type": "duplicate_capture",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED96200"
+    ],
+    "rzp_ids": [
+      "pay_51d9f5ecb2f647",
+      "pay_237c124d88824a"
+    ],
+    "utr_numbers": [
+      "UTR696439391755"
+    ]
+  },
+  {
+    "case_id": "case_0079",
+    "case_type": "duplicate_capture",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED16764"
+    ],
+    "rzp_ids": [
+      "pay_f38aae47f2f24c",
+      "pay_02bf6ebcd88747"
+    ],
+    "utr_numbers": [
+      "UTR392932052116"
+    ]
+  },
+  {
+    "case_id": "case_0080",
+    "case_type": "partial_refund_split",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED50730"
+    ],
+    "rzp_ids": [
+      "pay_d0dbe01bc2934a"
+    ],
+    "utr_numbers": [
+      "UTR115250737438"
+    ]
+  },
+  {
+    "case_id": "case_0081",
+    "case_type": "partial_refund_split",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED76698"
+    ],
+    "rzp_ids": [
+      "pay_677ea11f919f4c"
+    ],
+    "utr_numbers": [
+      "UTR399382463310"
+    ]
+  },
+  {
+    "case_id": "case_0082",
+    "case_type": "partial_refund_split",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED19150"
+    ],
+    "rzp_ids": [
+      "pay_95ce86db791b40"
+    ],
+    "utr_numbers": [
+      "UTR947295030873"
+    ]
+  },
+  {
+    "case_id": "case_0083",
+    "case_type": "partial_refund_split",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED29476"
+    ],
+    "rzp_ids": [
+      "pay_a291ac85170342"
+    ],
+    "utr_numbers": [
+      "UTR690328426008"
+    ]
+  },
+  {
+    "case_id": "case_0084",
+    "case_type": "partial_refund_split",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED40613"
+    ],
+    "rzp_ids": [
+      "pay_7b07a2ab10b245"
+    ],
+    "utr_numbers": [
+      "UTR954080072332"
+    ]
+  },
+  {
+    "case_id": "case_0085",
+    "case_type": "pending_settlement",
+    "expected_status": "PARTIAL",
+    "expected_sub_reason": "awaiting_settlement",
+    "ledger_ids": [
+      "LED74923"
+    ],
+    "rzp_ids": [
+      "pay_5f15b8a8eb614a"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0086",
+    "case_type": "pending_settlement",
+    "expected_status": "PARTIAL",
+    "expected_sub_reason": "awaiting_settlement",
+    "ledger_ids": [
+      "LED23069"
+    ],
+    "rzp_ids": [
+      "pay_c9bd4311c2fa46"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0087",
+    "case_type": "pending_settlement",
+    "expected_status": "PARTIAL",
+    "expected_sub_reason": "awaiting_settlement",
+    "ledger_ids": [
+      "LED71537"
+    ],
+    "rzp_ids": [
+      "pay_a85432579eb449"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0088",
+    "case_type": "pending_settlement",
+    "expected_status": "PARTIAL",
+    "expected_sub_reason": "awaiting_settlement",
+    "ledger_ids": [
+      "LED98389"
+    ],
+    "rzp_ids": [
+      "pay_a01a36ab9ed143"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0089",
+    "case_type": "pending_settlement",
+    "expected_status": "PARTIAL",
+    "expected_sub_reason": "awaiting_settlement",
+    "ledger_ids": [
+      "LED90931"
+    ],
+    "rzp_ids": [
+      "pay_8670f587d5d748"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0090",
+    "case_type": "failed_payment_orphan",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": "no_action_needed",
+    "ledger_ids": [
+      "LED21846"
+    ],
+    "rzp_ids": [
+      "pay_417c488a84c84e"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0091",
+    "case_type": "failed_payment_orphan",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": "no_action_needed",
+    "ledger_ids": [
+      "LED31805"
+    ],
+    "rzp_ids": [
+      "pay_7dcf4f41536243"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0092",
+    "case_type": "failed_payment_orphan",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": "no_action_needed",
+    "ledger_ids": [
+      "LED48452"
+    ],
+    "rzp_ids": [
+      "pay_c81f76b0d6b241"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0093",
+    "case_type": "failed_payment_orphan",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": "no_action_needed",
+    "ledger_ids": [
+      "LED84177"
+    ],
+    "rzp_ids": [
+      "pay_c293dc5bd3ec43"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0094",
+    "case_type": "failed_payment_orphan",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": "no_action_needed",
+    "ledger_ids": [
+      "LED91226"
+    ],
+    "rzp_ids": [
+      "pay_1c423530570c40"
+    ],
+    "utr_numbers": []
+  },
+  {
+    "case_id": "case_0095",
+    "case_type": "missing_from_ledger",
+    "expected_status": "PARTIAL",
+    "expected_sub_reason": "no_ledger_record",
+    "ledger_ids": [],
+    "rzp_ids": [
+      "pay_f0e4a21704314b"
+    ],
+    "utr_numbers": [
+      "UTR381912653765"
+    ]
+  },
+  {
+    "case_id": "case_0096",
+    "case_type": "missing_from_ledger",
+    "expected_status": "PARTIAL",
+    "expected_sub_reason": "no_ledger_record",
+    "ledger_ids": [],
+    "rzp_ids": [
+      "pay_3883bf20a7a24b"
+    ],
+    "utr_numbers": [
+      "UTR428941115748"
+    ]
+  },
+  {
+    "case_id": "case_0097",
+    "case_type": "missing_from_ledger",
+    "expected_status": "PARTIAL",
+    "expected_sub_reason": "no_ledger_record",
+    "ledger_ids": [],
+    "rzp_ids": [
+      "pay_e1d35afe52454e"
+    ],
+    "utr_numbers": [
+      "UTR728703172393"
+    ]
+  },
+  {
+    "case_id": "case_0098",
+    "case_type": "adversarial_near_miss",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED47512"
+    ],
+    "rzp_ids": [
+      "pay_b02ae0aa01174f"
+    ],
+    "utr_numbers": [
+      "UTR983075619976"
+    ]
+  },
+  {
+    "case_id": "case_0099",
+    "case_type": "adversarial_near_miss",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED40162"
+    ],
+    "rzp_ids": [
+      "pay_75d6642b0f6940"
+    ],
+    "utr_numbers": [
+      "UTR342031375564"
+    ]
+  },
+  {
+    "case_id": "case_0100",
+    "case_type": "adversarial_near_miss",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED33021"
+    ],
+    "rzp_ids": [
+      "pay_c5bd1b85bee442"
+    ],
+    "utr_numbers": [
+      "UTR963856048497"
+    ]
+  },
+  {
+    "case_id": "case_0101",
+    "case_type": "adversarial_near_miss",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED36318"
+    ],
+    "rzp_ids": [
+      "pay_1fddb0ed858741"
+    ],
+    "utr_numbers": [
+      "UTR503604474507"
+    ]
+  },
+  {
+    "case_id": "case_0102",
+    "case_type": "unidentified_bank_credit",
+    "expected_status": "UNRESOLVED",
+    "expected_sub_reason": "unidentified_bank_credit",
+    "ledger_ids": [],
+    "rzp_ids": [],
+    "utr_numbers": [
+      "UTR632336233214"
+    ]
+  },
+  {
+    "case_id": "case_0103",
+    "case_type": "unidentified_bank_credit",
+    "expected_status": "UNRESOLVED",
+    "expected_sub_reason": "unidentified_bank_credit",
+    "ledger_ids": [],
+    "rzp_ids": [],
+    "utr_numbers": [
+      "UTR228008204060"
+    ]
+  },
+  {
+    "case_id": "case_0104",
+    "case_type": "unidentified_bank_credit",
+    "expected_status": "UNRESOLVED",
+    "expected_sub_reason": "unidentified_bank_credit",
+    "ledger_ids": [],
+    "rzp_ids": [],
+    "utr_numbers": [
+      "UTR846723617943"
+    ]
+  },
+  {
+    "case_id": "case_0105",
+    "case_type": "unidentified_bank_credit",
+    "expected_status": "UNRESOLVED",
+    "expected_sub_reason": "unidentified_bank_credit",
+    "ledger_ids": [],
+    "rzp_ids": [],
+    "utr_numbers": [
+      "UTR967971241676"
+    ]
+  },
+  {
+    "case_id": "case_0106",
+    "case_type": "unidentified_bank_credit",
+    "expected_status": "UNRESOLVED",
+    "expected_sub_reason": "unidentified_bank_credit",
+    "ledger_ids": [],
+    "rzp_ids": [],
+    "utr_numbers": [
+      "UTR505680216951"
+    ]
+  },
+  {
+    "case_id": "case_0107",
+    "case_type": "semantic_brand_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED89964"
+    ],
+    "rzp_ids": [
+      "pay_eb083b8a12614e"
+    ],
+    "utr_numbers": [
+      "UTR809620368716"
+    ]
+  },
+  {
+    "case_id": "case_0108",
+    "case_type": "semantic_brand_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED28320"
+    ],
+    "rzp_ids": [
+      "pay_c34bdea7eb0543"
+    ],
+    "utr_numbers": [
+      "UTR430872306667"
+    ]
+  },
+  {
+    "case_id": "case_0109",
+    "case_type": "semantic_brand_narration",
+    "expected_status": "MATCHED",
+    "expected_sub_reason": null,
+    "ledger_ids": [
+      "LED58629"
+    ],
+    "rzp_ids": [
+      "pay_721b4a2e4fc84f"
+    ],
+    "utr_numbers": [
+      "UTR867695941207"
+    ]
+  }
+]

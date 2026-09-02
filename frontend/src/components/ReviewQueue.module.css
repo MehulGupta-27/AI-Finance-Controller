@@ -1,0 +1,68 @@
+.page { display: flex; flex-direction: column; gap: 16px; }
+
+.headerRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.title { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+.hint  { font-size: 12px; color: #888; }
+
+.tableWrap {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 11px 14px;
+  background: #f8f9fa;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #888;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.row:hover { background: #f5f7ff; }
+
+.row td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f2f5;
+  vertical-align: middle;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.humanTag {
+  font-weight: 400;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.subReason { color: #555; }
+.amount    { font-family: monospace; font-weight: 600; }
+.date      { color: #888; font-size: 12px; }
+.source    { color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
