@@ -57,15 +57,17 @@ from agents.reporting_agent import (
 from agents.llm_provider import LLMError
 
 
-def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteResult"]]:
+def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteResult"], dict[str, dict]]:
     """
     Run the full reconciliation pipeline from ingestion → routing → audit.
 
     Returns
     -------
-    (PipelineRunResult, list[RouteResult])
+    (PipelineRunResult, list[RouteResult], dict[str, dict])
         - PipelineRunResult: summary statistics and record IDs by status
         - list[RouteResult]:  full routing decisions with Explanation objects
+        - dict[str, dict]:    raw display fields keyed by record_id
+                             (customer, notes, date, amount, order_id, narration)
     """
     t_start = time.time()
 
@@ -409,7 +411,7 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
     indexed_count = index_reconciled_records(record_results, raw_fields_list)
     _pipe_log.info(f"OK Indexed {indexed_count} records for Q&A")
 
-    return run_result, all_results
+    return run_result, all_results, raw_lookup
 
 
 if __name__ == "__main__":

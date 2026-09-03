@@ -47,6 +47,30 @@ else:
     print(f"  OLD 'flags' present: {has_old_flags}")
     print(f"  OLD 'next_step' present: {has_old_next_step}")
 
+# NEW: Verify real data content (not just shape)
+print("\n[Fix 3b] Real data content verification...")
+has_customer = any(r['customer'] for r in data['records'])
+has_notes = any(r.get('notes') for r in data['records'])
+has_real_dates = any(r['date'] and r['date'] != "" for r in data['records'])
+
+if has_customer:
+    sample_customer = next(r for r in data['records'] if r['customer'])
+    print(f"[OK] Real customer names present: '{sample_customer['customer']}'")
+else:
+    print(f"[FAIL] No customer names found in any record")
+
+if has_notes:
+    sample_notes = next(r for r in data['records'] if r.get('notes'))
+    print(f"[OK] Real notes present: '{sample_notes['notes'][:50]}...'")
+else:
+    print(f"[WARN] No notes found (may be blank for most records)")
+
+if has_real_dates:
+    sample_date = next(r for r in data['records'] if r['date'])
+    print(f"[OK] Real dates present (not from datetime.today()): {sample_date['date']}")
+else:
+    print(f"[FAIL] No real dates found")
+
 # Fix 4: Dashboard real counts (not hardcoded 102/79)
 print("\n[Fix 4] Dashboard counts from real pipeline (not hardcoded)...")
 exact_count = data['summary'].get('exact_match_count', 0)

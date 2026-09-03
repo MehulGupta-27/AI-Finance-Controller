@@ -38,6 +38,7 @@ app.add_middleware(
 # Cache the last pipeline run — in production this would be database-backed
 _LAST_RUN: PipelineRunResult | None = None
 _LAST_FULL_RESULTS = None  # list of RouteResult with full Explanation
+_LAST_RAW_LOOKUP = None     # dict[record_id, raw_fields]
 
 
 class ActionRequest(BaseModel):
@@ -52,14 +53,15 @@ def get_summary():
     Return dashboard summary + all records.
     If pipeline hasn't run yet, run it now (blocking).
     """
-    global _LAST_RUN, _LAST_FULL_RESULTS
+    global _LAST_RUN, _LAST_FULL_RESULTS, _LAST_RAW_LOOKUP
 
     if _LAST_RUN is None:
         logger.info("No cached pipeline run — running now...")
-        _LAST_RUN, _LAST_FULL_RESULTS = _run_and_cache_pipeline()
+        _LAST_RUN, _LAST_FULL_RESULTS, _LAST_RAW_LOOKUP = _run_and_cache_pipeline()
 
     run = _LAST_RUN
     results = _LAST_FULL_RESULTS
+    raw_lookup = _LAST_RAW_LOOKUP
 
     # Compute exact_match_count and fuzzy_auto_count
     exact_count = sum(1 for r in results if r.source == "exact")
@@ -84,6 +86,7 @@ def get_summary():
     # Build full records array with all fields frontend needs
     records = []
     for r in results:
+        raw = raw_lookup.get(r.record_id, {})
         records.append({
             "record_id":   r.record_id,
             "status":      r.status,
@@ -93,17 +96,18 @@ def get_summary():
             "explanation": {
                 "headline":       r.explanation.headline,
                 "checklist":      [{"passed": c.passed, "label": c.label} for c in r.explanation.checklist],
-                "risk_flags":     r.explanation.risk_flags,  # NOT "flags"
+                "risk_flags":     r.explanation.risk_flags,
                 "days_elapsed":   r.explanation.days_elapsed,
-                "recommendation": r.explanation.recommendation,  # NOT "next_step"
+                "recommendation": r.explanation.recommendation,
                 "confidence":     r.explanation.confidence,
             },
-            # Additional display fields (would come from raw lookup in real impl)
-            "customer":   _extract_customer(r),
-            "amount":     _extract_amount(r),
-            "date":       _extract_date(r),
-            "order_id":   _extract_order_id(r),
-            "notes":      _extract_notes(r),
+            # Real display fields from raw_lookup (not extracted from checklist)
+            "customer":   raw.get("customer", ""),
+            "amount":     float(raw.get("amount", 0)),
+            "date":       str(raw.get("date", "")),
+            "order_id":   raw.get("order_id", ""),
+            "notes":      raw.get("notes", ""),
+            "narration":  raw.get("narration", ""),
         })
 
     return {"summary": summary, "records": records}
@@ -120,59 +124,13 @@ def record_action(req: ActionRequest):
 
 def _run_and_cache_pipeline():
     """
-    Run the full pipeline and return (PipelineRunResult, list[RouteResult]).
+    Run the full pipeline and return (PipelineRunResult, list[RouteResult], raw_lookup).
     Caches the result globally.
     """
     logger.info("Running full pipeline...")
-    run_result, all_results = run_pipeline()
+    run_result, all_results, raw_lookup = run_pipeline()
     logger.info("Pipeline complete.")
-    return run_result, all_results
-
-
-def _extract_customer(r) -> str:
-    """Best-effort customer name from record_id or checklist."""
-    # Most records are ledger-anchored and have LED prefix
-    if hasattr(r, 'record_id') and r.record_id.startswith("LED"):
-        # Would need raw lookup — for now return empty
-        return ""
-    return ""
-
-
-def _extract_amount(r) -> float:
-    """Best-effort amount extraction from checklist."""
-    for item in r.explanation.checklist:
-        if "Rs." in item.label:
-            import re
-            # Match Rs.1,234.56 or Rs.1234.56
-            match = re.search(r'Rs\.([0-9,]+\.?\d*)', item.label)
-            if match:
-                return float(match.group(1).replace(',', ''))
-    return 0.0
-
-
-def _extract_date(r) -> str:
-    """Best-effort date extraction from checklist."""
-    if r.explanation.days_elapsed is not None:
-        # Infer from days_elapsed — not accurate but gives a signal
-        from datetime import date, timedelta
-        approx = date.today() - timedelta(days=r.explanation.days_elapsed)
-        return str(approx)
-    return ""
-
-
-def _extract_order_id(r) -> str:
-    """Best-effort order_id extraction from checklist."""
-    for item in r.explanation.checklist:
-        import re
-        match = re.search(r'ORD\d+', item.label)
-        if match:
-            return match.group(0)
-    return ""
-
-
-def _extract_notes(r) -> str:
-    # Notes are not in Explanation — would need raw_fields wiring
-    return ""
+    return run_result, all_results, raw_lookup
 
 
 if __name__ == "__main__":

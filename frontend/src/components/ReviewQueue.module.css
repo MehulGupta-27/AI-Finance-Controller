@@ -66,3 +66,15 @@
 .amount    { font-family: monospace; font-weight: 600; }
 .date      { color: #888; font-size: 12px; }
 .source    { color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+.confidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confText {
+  font-size: 11px;
+  color: #666;
+  white-space: nowrap;
+}

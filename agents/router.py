@@ -118,15 +118,19 @@ def _explain_fuzzy(pair: FuzzyMatchPair) -> Explanation:
     date_ok = s.date_score  >= 0.70
     text_ok = s.text_score  >= 0.30
     refund_note = f" (after Rs.{pair.refund_amount:,.2f} refund)" if pair.refund_amount > 0 else ""
+    
+    days_lag = (pair.bank_record.date - pair.rzp_record.date).days
 
     checklist = [
         ChecklistItem(passed=amt_ok,
             label=f"Amount matches{refund_note}: Rs.{pair.predicted_settlement:,.2f} vs Rs.{pair.bank_record.amount:,.2f}"
-                  + (f" (diff Rs.{abs(pair.predicted_settlement - pair.bank_record.amount):.2f})" if not amt_ok else "")),
+                  + (f" (difference Rs.{abs(pair.predicted_settlement - pair.bank_record.amount):.2f})" if not amt_ok else "")),
         ChecklistItem(passed=date_ok,
-            label=f"Settlement date: {(pair.bank_record.date - pair.rzp_record.date).days}-day lag"),
+            label=f"Bank deposit arrived {days_lag} day{'s' if days_lag != 1 else ''} after payment" + 
+                  (" — normal timing" if date_ok else " — longer than usual")),
         ChecklistItem(passed=text_ok,
-            label=f"Text similarity: {_conf_pct(s.text_score)} (narration: {pair.bank_record.text_field[:30]!r})"),
+            label=f"Bank description: '{pair.bank_record.text_field[:40]}'" + 
+                  (" matches customer name" if text_ok else " doesn't match (matched on amount and date instead)")),
     ]
     return Explanation(
         headline       = f"MATCHED — {_conf_pct(conf)} confidence",
@@ -146,23 +150,19 @@ def _explain_llm(vr: VerificationResult) -> Explanation:
 
     checklist = [
         ChecklistItem(
-            passed = a4.semantic_similarity >= 0.50,
-            label  = f"Semantic similarity: {_conf_pct(a4.semantic_similarity)}",
-        ),
-        ChecklistItem(
             passed = True,
-            label  = f"Agent 4 reasoning: {a4.reasoning[:80]}",
+            label  = f"Why this matched: {a4.reasoning[:100]}",
         ),
     ]
     if vr.agent5_result and not vr.skipped:
         checklist.append(ChecklistItem(
             passed = vr.agrees,
-            label  = f"Agent 5 independent verification: {vr.agent5_result.independent_decision} ({_conf_pct(vr.agent5_result.independent_confidence)})",
+            label  = f"Independently verified by a second check ({_conf_pct(vr.agent5_result.independent_confidence)} confidence)",
         ))
     elif vr.skipped:
         checklist.append(ChecklistItem(
             passed = True,
-            label  = f"Verification skipped — conf≥{_conf_pct(SKIP_VERIFICATION_CONFIDENCE)} and amount<Rs.{SKIP_VERIFICATION_MAX_AMOUNT:,}",
+            label  = f"Second verification skipped (high confidence match, small amount)",
         ))
 
     flags = list(a4.risk_flags)
@@ -178,30 +178,30 @@ def _explain_llm(vr: VerificationResult) -> Explanation:
 
 def _explain_partial_awaiting(rzp: CanonicalRecord, days: int) -> Explanation:
     return Explanation(
-        headline       = f"PARTIAL — Awaiting settlement ({days} days)",
+        headline       = f"IN PROGRESS — Waiting for bank deposit ({days} days so far) — 90% sure this is correct",
         checklist      = [
-            ChecklistItem(passed=True,  label="Ledger confirms order"),
-            ChecklistItem(passed=True,  label="Gateway (Razorpay) confirms payment captured"),
-            ChecklistItem(passed=False, label=f"Bank settlement pending ({days}/{OVERDUE_SETTLEMENT_DAYS} days elapsed)"),
+            ChecklistItem(passed=True,  label="Your order book confirms the sale"),
+            ChecklistItem(passed=True,  label="Razorpay confirms payment was captured"),
+            ChecklistItem(passed=False, label=f"Bank deposit hasn't arrived yet ({days} out of {OVERDUE_SETTLEMENT_DAYS} day window)"),
         ],
         risk_flags     = [],
         days_elapsed   = days,
-        recommendation = "No action needed yet — will auto-resolve on next pipeline run once bank settles",
+        recommendation = "No action needed — banks typically take 1-5 days. This will auto-close once the deposit arrives.",
         confidence     = 0.90,
     )
 
 
 def _explain_partial_no_ledger(rzp: CanonicalRecord, bank: CanonicalRecord) -> Explanation:
     return Explanation(
-        headline       = f"PARTIAL — No ledger record",
+        headline       = f"IN PROGRESS — Money received, but no order on record — 85% sure this is correct",
         checklist      = [
-            ChecklistItem(passed=True,  label=f"Gateway confirms capture: Rs.{rzp.amount:,.2f}"),
-            ChecklistItem(passed=True,  label=f"Bank confirms settlement: Rs.{bank.amount:,.2f}"),
-            ChecklistItem(passed=False, label="No matching ledger entry found"),
+            ChecklistItem(passed=True,  label=f"Razorpay shows payment was captured: Rs.{rzp.amount:,.2f}"),
+            ChecklistItem(passed=True,  label=f"Bank deposit arrived: Rs.{bank.amount:,.2f}"),
+            ChecklistItem(passed=False, label="No matching order found in your system"),
         ],
         risk_flags     = [],
         days_elapsed   = None,
-        recommendation = "Flag for ops: check integration/webhook logs",
+        recommendation = "Check if this was a manual payment through Razorpay dashboard, or an offline order that wasn't logged",
         confidence     = 0.85,
     )
 
@@ -210,15 +210,15 @@ def _explain_unresolved(sub: str, **ctx) -> Explanation:
     if sub == "overdue_settlement":
         days = ctx.get("days", 0)
         return Explanation(
-            headline       = f"UNRESOLVED — Settlement overdue ({days} days)",
+            headline       = f"NEEDS REVIEW — Bank deposit is late ({days} days) — needs investigation",
             checklist      = [
-                ChecklistItem(passed=True,  label="Ledger confirms order"),
-                ChecklistItem(passed=True,  label="Gateway confirms capture"),
-                ChecklistItem(passed=False, label=f"Bank settlement overdue by {days} days (threshold: {OVERDUE_SETTLEMENT_DAYS})"),
+                ChecklistItem(passed=True,  label="Your order book shows the customer paid you"),
+                ChecklistItem(passed=True,  label="Razorpay confirmed they captured the payment"),
+                ChecklistItem(passed=False, label=f"But the bank deposit is {days} days late (usually arrives in {OVERDUE_SETTLEMENT_DAYS} days or less)"),
             ],
             risk_flags     = [],
             days_elapsed   = days,
-            recommendation = "Contact bank/gateway regarding the delayed settlement",
+            recommendation = "Contact your bank or Razorpay to ask where this deposit is",
             confidence     = 0.0,
         )
     if sub == "agent_disagreement":
@@ -227,42 +227,42 @@ def _explain_unresolved(sub: str, **ctx) -> Explanation:
         a5_dec  = ctx.get("a5_decision", "?")
         a5_conf = ctx.get("a5_confidence", 0.0)
         return Explanation(
-            headline       = "UNRESOLVED — AI reasoning conflict",
+            headline       = "NEEDS REVIEW — Our two checks disagreed on this one — needs your judgment",
             checklist      = [
-                ChecklistItem(passed=False, label=f"Agent 4: {a4_dec} ({_conf_pct(a4_conf)})"),
-                ChecklistItem(passed=False, label=f"Agent 5: {a5_dec} ({_conf_pct(a5_conf)})"),
+                ChecklistItem(passed=False, label=f"First check said: {a4_dec} ({_conf_pct(a4_conf)} sure)"),
+                ChecklistItem(passed=False, label=f"Second check said: {a5_dec} ({_conf_pct(a5_conf)} sure)"),
             ],
-            risk_flags     = ["agent_disagreement"],
+            risk_flags     = ["conflicting_analysis"],
             days_elapsed   = None,
-            recommendation = "Human review required — the two independent reasoning passes disagreed",
+            recommendation = "Since our automated checks disagreed, please review this one manually",
             confidence     = 0.0,
         )
     if sub == "low_confidence":
         conf    = ctx.get("confidence", 0.0)
         reason  = ctx.get("reasoning", "")
         return Explanation(
-            headline       = f"UNRESOLVED — {_conf_pct(conf)} confidence",
+            headline       = f"NEEDS REVIEW — Looks like a match, but we're not 100% sure",
             checklist      = [
-                ChecklistItem(passed=False, label=f"Combined confidence {_conf_pct(conf)} below threshold {_conf_pct(LLM_CONFIDENCE_AUTO_CONFIRM)}"),
-                ChecklistItem(passed=False, label=f"Agent 4 reasoning: {reason[:80]}"),
+                ChecklistItem(passed=False, label=f"We're only {_conf_pct(conf)} confident this is correct (we need at least 85% to approve automatically)"),
+                ChecklistItem(passed=False, label=f"Why it might be a match: {reason[:100]}"),
             ],
             risk_flags     = [],
             days_elapsed   = None,
-            recommendation = "Review and confirm or reject the suggested match",
+            recommendation = "Take a quick look and click 'Yes, this is a match' if it looks right",
             confidence     = conf,
         )
     if sub == "high_value_review_required":
         amt  = ctx.get("amount", 0.0)
         conf = ctx.get("confidence", 0.0)
         return Explanation(
-            headline       = f"UNRESOLVED — High value (Rs.{amt:,.2f})",
+            headline       = f"NEEDS REVIEW — Large amount needs your sign-off (Rs.{amt:,.2f})",
             checklist      = [
-                ChecklistItem(passed=True,  label=f"Match confidence: {_conf_pct(conf)}"),
-                ChecklistItem(passed=False, label=f"Exceeds Rs.{HIGH_VALUE_REVIEW_THRESHOLD_RUPEES:,} mandatory review threshold"),
+                ChecklistItem(passed=True,  label=f"We're {_conf_pct(conf)} confident this is correct"),
+                ChecklistItem(passed=False, label=f"But amounts over Rs.{HIGH_VALUE_REVIEW_THRESHOLD_RUPEES:,} always need manual approval as a safety check"),
             ],
             risk_flags     = ["high_value"],
             days_elapsed   = None,
-            recommendation = "Mandatory sign-off required regardless of match confidence",
+            recommendation = "Take a look and approve if the details match up — this is just a safety check for large amounts",
             confidence     = conf,
         )
     if sub == "unidentified_bank_credit":
@@ -270,24 +270,24 @@ def _explain_unresolved(sub: str, **ctx) -> Explanation:
         dt   = ctx.get("date", "")
         narr = ctx.get("narration", "")
         return Explanation(
-            headline       = "UNRESOLVED — Unidentified credit",
+            headline       = "NEEDS REVIEW — Money received with no matching customer payment — needs investigation",
             checklist      = [
-                ChecklistItem(passed=False, label="No matching ledger entry"),
-                ChecklistItem(passed=False, label="No matching gateway record"),
-                ChecklistItem(passed=True,  label=f"Amount Rs.{amt:,.2f} on {dt} narration: {narr!r}"),
+                ChecklistItem(passed=False, label="No matching order found in your system"),
+                ChecklistItem(passed=False, label="No matching Razorpay transaction"),
+                ChecklistItem(passed=True,  label=f"Bank credited Rs.{amt:,.2f} on {dt} with description: '{narr}'"),
             ],
-            risk_flags     = ["unidentified_credit"],
+            risk_flags     = ["unexplained_credit"],
             days_elapsed   = None,
-            recommendation = "Identify the source of this credit",
+            recommendation = "Contact your bank to identify the source — could be interest, a fee reversal, or a misdirected transfer",
             confidence     = 0.0,
         )
     # no_candidates_found or catch-all
     return Explanation(
-        headline       = "UNRESOLVED — No match found",
-        checklist      = [ChecklistItem(passed=False, label="No plausible candidates in any source")],
+        headline       = "NEEDS REVIEW — No match found anywhere — needs manual investigation",
+        checklist      = [ChecklistItem(passed=False, label="Couldn't find any plausible match in your order book, Razorpay, or bank records")],
         risk_flags     = [],
         days_elapsed   = None,
-        recommendation = "Investigate manually — no automated signal to go on",
+        recommendation = "Investigate manually — there's no automated signal to go on",
         confidence     = 0.0,
     )
 

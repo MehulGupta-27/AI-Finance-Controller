@@ -4,15 +4,15 @@ const STATUS_COLOR  = { MATCHED: '#16a34a', PARTIAL: '#d97706', UNRESOLVED: '#dc
 const STATUS_BG     = { MATCHED: '#dcfce7', PARTIAL: '#fef3c7', UNRESOLVED: '#fee2e2' }
 
 const SUB_REASON_LABEL = {
-  no_action_needed:           'Payment failed — nothing to reconcile',
-  awaiting_settlement:        'Waiting for bank deposit',
-  no_ledger_record:           'Money received — no order on record',
-  overdue_settlement:         'Bank deposit overdue',
-  agent_disagreement:         'AI agents gave conflicting answers',
-  low_confidence:             'Probable match — needs confirmation',
-  high_value_review_required: 'High-value — mandatory sign-off',
-  unidentified_bank_credit:   'Unexplained bank credit',
-  no_candidates_found:        'No match found anywhere',
+  no_action_needed:           'Payment failed — no money moved',
+  awaiting_settlement:        'Waiting for bank to deposit the money',
+  no_ledger_record:           'Money received — but no order was recorded in your system',
+  overdue_settlement:         'Bank deposit is late',
+  agent_disagreement:         'System checks disagreed — need your call',
+  low_confidence:             'Looks like a match — but not 100% sure',
+  high_value_review_required: 'Large amount — needs your sign-off',
+  unidentified_bank_credit:   'Money appeared in bank — source unknown',
+  no_candidates_found:        'No match found in any system',
 }
 
 export default function ReviewQueue({ records, onSelect, showAll = false }) {
@@ -71,9 +71,9 @@ export default function ReviewQueue({ records, onSelect, showAll = false }) {
                 </td>
                 <td>{r.customer || r.narration || '—'}</td>
                 <td className={styles.date}>{r.date || '—'}</td>
-                <td>
+                <td className={styles.confidence}>
                   {r.confidence > 0
-                    ? <ConfBar value={r.confidence} />
+                    ? <><ConfBar value={r.confidence} /> <span className={styles.confText}>{Math.round(r.confidence * 100)}% sure</span></>
                     : <span style={{ color: '#ccc' }}>—</span>}
                 </td>
                 <td className={styles.source}>
