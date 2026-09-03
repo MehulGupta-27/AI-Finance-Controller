@@ -4,6 +4,7 @@ export default function Dashboard({ summary, actionLog }) {
   const {
     records_processed, matched, partial, unresolved,
     match_rate, processing_time_s, llm_calls, no_llm_pct, as_of_date,
+    exact_match_count, fuzzy_auto_count,
   } = summary
 
   return (
@@ -58,14 +59,14 @@ export default function Dashboard({ summary, actionLog }) {
               icon="🔑"
               label="Exact order match"
               desc="Order number found in both your records and Razorpay"
-              count={102}
+              count={exact_match_count || 0}
               total={records_processed}
             />
             <StageRow
               icon="🔢"
               label="Amount + date match"
               desc="Same amount deposited within a few days — confirmed automatically"
-              count={79}
+              count={fuzzy_auto_count || 0}
               total={records_processed}
             />
             <StageRow

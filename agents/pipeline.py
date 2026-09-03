@@ -57,7 +57,16 @@ from agents.reporting_agent import (
 from agents.llm_provider import LLMError
 
 
-def run_pipeline(data_dir: str = None) -> PipelineRunResult:
+def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteResult"]]:
+    """
+    Run the full reconciliation pipeline from ingestion → routing → audit.
+
+    Returns
+    -------
+    (PipelineRunResult, list[RouteResult])
+        - PipelineRunResult: summary statistics and record IDs by status
+        - list[RouteResult]:  full routing decisions with Explanation objects
+    """
     t_start = time.time()
 
     # -----------------------------------------------------------------------
@@ -350,7 +359,57 @@ def run_pipeline(data_dir: str = None) -> PipelineRunResult:
     _pipe_log.info(f"  No-LLM resolve : {total - llm_call_count} / {total} "
                    f"({(total - llm_call_count) / total * 100:.0f}%)")
 
-    return run_result
+    # -----------------------------------------------------------------------
+    # Agent 9 — Index records into ChromaDB for Q&A
+    # -----------------------------------------------------------------------
+    _pipe_log.info("\nIndexing records for Q&A agent...")
+    from agents.qa_agent import index_reconciled_records
+
+    # Build record_id → raw_fields lookup
+    raw_lookup: dict[str, dict] = {}
+    for led in ing.ledger_records:
+        raw_lookup[led.record_id] = {
+            "customer":  led.text_field,      # customer_name in ledger
+            "narration": "",
+            "order_id":  led.order_id or "",
+            "notes":     led.notes or "",
+            "amount":    float(led.amount),
+            "date":      led.date,
+        }
+    for rzp in ing.razorpay_records:
+        if rzp.record_id in raw_lookup:
+            # Already have ledger entry — keep ledger notes/customer
+            pass
+        else:
+            raw_lookup[rzp.record_id] = {
+                "customer":  rzp.text_field,  # often blank or minimal
+                "narration": "",
+                "order_id":  rzp.order_id or "",
+                "notes":     "",
+                "amount":    float(rzp.amount),
+                "date":      rzp.date,
+            }
+    for bank in ing.bank_records:
+        if bank.record_id not in raw_lookup:
+            raw_lookup[bank.record_id] = {
+                "customer":  "",
+                "narration": bank.text_field,  # bank statement narration
+                "order_id":  "",
+                "notes":     "",
+                "amount":    float(bank.amount),
+                "date":      bank.date,
+            }
+
+    # Parallel list of raw_fields aligned with all_results
+    raw_fields_list = [raw_lookup.get(r.record_id, {
+        "customer": "", "narration": "", "order_id": "", "notes": "",
+        "amount": 0.0, "date": None,
+    }) for r in all_results]
+
+    indexed_count = index_reconciled_records(record_results, raw_fields_list)
+    _pipe_log.info(f"OK Indexed {indexed_count} records for Q&A")
+
+    return run_result, all_results
 
 
 if __name__ == "__main__":

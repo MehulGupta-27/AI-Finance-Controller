@@ -22,7 +22,7 @@ Why this is different from Agent 4's semantic_similarity:
 Stack:
   - ChromaDB: embedded in-process, no server, persists to disk at chroma_db/
   - Embeddings: sentence-transformers all-MiniLM-L6-v2, CPU, free, no API key
-  - LLM: Groq GROQ_REASONING_MODEL (same fast/light tier as Agent 4) —
+  - LLM: Groq GROQ_QA_MODEL (same tier as Agent 4: fast, light) —
     narrow summarization task, not deep reasoning
 
 Grounding rules:
@@ -40,7 +40,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from agents.config import GROQ_REASONING_MODEL, MERCHANT_PROFILE
+from agents.config import GROQ_QA_MODEL, MERCHANT_PROFILE
 from agents.llm_provider import call_llm, LLMError
 from agents.reporting_agent import RecordResult
 
@@ -342,7 +342,7 @@ def query(
             prompt    = prompt,
             schema    = QAAnswer,
             record_id = f"qa_{hash(question) % 100000:05d}",
-            model     = GROQ_REASONING_MODEL,
+            model     = GROQ_QA_MODEL,
         )
         return result.answer
     except LLMError as e:
