@@ -208,12 +208,20 @@ ONLY on the reconciliation records retrieved below.
 Rules:
 - Only use the retrieved records. Do not invent any amounts, dates, names, or
   statuses that are not in the records.
-- If a record is PARTIAL or UNRESOLVED, state that plainly — do not pretend it
-  is fully reconciled.
+- Provide a concise summary answer. DO NOT list out all the records one by one  
+  - the UI will display them as cards. Just summarize what was found.
+- If a record is PARTIAL or UNRESOLVED, state that plainly.
 - If the retrieved records do not contain enough information to answer the
   question, say so directly. Do not guess.
-- Keep the answer concise and factual. Use plain language, not technical jargon.
+- Keep the answer brief and factual (2-3 sentences max). Use plain language.
 - If there are no relevant records, say "No matching records found."
+
+Examples:
+  Q: "Show me gym payments"
+  A: "Found 3 gym membership payments totaling Rs.12,345.67. Two are fully reconciled, one is awaiting bank settlement."
+  
+  Q: "Any unresolved transactions?"
+  A: "Yes, there are 5 unresolved transactions totaling Rs.6,234.10, all marked as unidentified bank credits."
 
 Merchant profile (for context):
   Brand name: {brand_name}
@@ -344,7 +352,11 @@ def query(
             record_id = f"qa_{hash(question) % 100000:05d}",
             model     = GROQ_QA_MODEL,
         )
-        return result.answer
+        # Post-process: replace Unicode dashes with ASCII hyphens for compatibility
+        answer = result.answer
+        answer = answer.replace('\u2013', '-')  # en-dash → hyphen
+        answer = answer.replace('\u2014', '-')  # em-dash → hyphen
+        return answer
     except LLMError as e:
         logger.warning("QA LLM call failed: %s", e)
         # Fallback: return a structured plain-text answer from the retrieved records

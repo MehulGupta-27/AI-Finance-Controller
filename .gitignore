@@ -24,7 +24,10 @@ chroma_db/
 
 # ── Generated outputs and reports ─────────────────────────────────────────
 outputs/reports/*
-data/raw/
+
+# ── Generated datasets (550-record scale) ─────────────────────────────────
+# Keep data/raw_100/ (110-record test set), exclude data/raw/ (550-record)
+data/raw/*
 
 # ── pytest / coverage ─────────────────────────────────────────────────────
 .pytest_cache/

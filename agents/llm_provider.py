@@ -128,40 +128,94 @@ def _cache_put(record_id: str, phash: str, response_json: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Rate limiter — token bucket, capped at LLM_RATE_LIMIT_RPM req/min
+# Token-aware rate limiter (Section 6A)
+# Tracks cumulative tokens sent in trailing 60-second window
 # ---------------------------------------------------------------------------
-class _TokenBucketRateLimiter:
+class _TokenAwareRateLimiter:
     """
-    Token bucket rate limiter.
-    Allows up to `rpm` requests per 60-second window.
-    Thread-safe; blocks (sleeps) when the bucket is empty.
+    Token-consumption-aware rate limiter for Groq's 8K tokens/minute limit.
+    
+    Section 6A: Track cumulative tokens sent in the trailing 60-second window,
+    estimate from prompt length before sending, correct from actual response
+    afterward. Pause new calls when approaching ~8K/minute ceiling.
     """
 
-    def __init__(self, rpm: int):
-        self._rpm         = rpm
-        self._tokens      = float(rpm)
-        self._max_tokens  = float(rpm)
-        self._refill_rate = rpm / 60.0   # tokens per second
-        self._last_refill = time.monotonic()
-        self._lock        = threading.Lock()
+    def __init__(self, tpm_limit: int = 8000):
+        self._tpm_limit = tpm_limit
+        self._token_history: list[tuple[float, int]] = []  # (timestamp, tokens)
+        self._lock = threading.Lock()
+        logger.info(f"Token-aware rate limiter initialized: {tpm_limit} TPM")
 
-    def acquire(self) -> None:
+    def _prune_old_entries(self, now: float) -> None:
+        """Remove entries older than 60 seconds."""
+        cutoff = now - 60.0
+        self._token_history = [(ts, tokens) for ts, tokens in self._token_history if ts > cutoff]
+
+    def _get_trailing_tokens(self, now: float) -> int:
+        """Calculate cumulative tokens in trailing 60-second window."""
+        self._prune_old_entries(now)
+        return sum(tokens for _, tokens in self._token_history)
+
+    def estimate_tokens(self, prompt: str) -> int:
+        """
+        Rough token estimate: ~4 characters per token for English.
+        Section 6A: estimate from prompt length before sending.
+        """
+        return len(prompt) // 4
+
+    def acquire(self, estimated_tokens: int) -> None:
+        """
+        Block until there's enough token budget in the trailing window.
+        Section 6A: pause new calls when close to the 8K/minute ceiling.
+        """
         while True:
             with self._lock:
                 now = time.monotonic()
-                elapsed = now - self._last_refill
-                self._tokens = min(
-                    self._max_tokens,
-                    self._tokens + elapsed * self._refill_rate,
-                )
-                self._last_refill = now
-                if self._tokens >= 1.0:
-                    self._tokens -= 1.0
+                trailing = self._get_trailing_tokens(now)
+                
+                # Leave 10% safety margin (90% of limit)
+                available = int(self._tpm_limit * 0.9) - trailing
+                
+                if estimated_tokens <= available:
+                    # Reserve these tokens immediately (will be corrected later)
+                    self._token_history.append((now, estimated_tokens))
+                    logger.debug(
+                        f"Token budget OK: {trailing}/{self._tpm_limit} TPM used, "
+                        f"acquiring {estimated_tokens} tokens"
+                    )
                     return
+                
+                # Calculate how long to wait
+                if self._token_history:
+                    oldest_ts, oldest_tokens = self._token_history[0]
+                    wait_time = (oldest_ts + 60.0) - now
+                    if wait_time > 0:
+                        logger.info(
+                            f"Token budget nearly exhausted: {trailing}/{self._tpm_limit} TPM used. "
+                            f"Waiting {wait_time:.1f}s for window to advance."
+                        )
+                        time.sleep(min(wait_time, 1.0))
+                        continue
+            
+            # Outside lock, short sleep to avoid busy-wait
             time.sleep(0.1)
 
+    def correct_actual_tokens(self, estimated: int, actual: int) -> None:
+        """
+        Section 6A: correct from actual usage after response received.
+        Replace the last estimated entry with the actual token count.
+        """
+        with self._lock:
+            # Find and replace the most recent entry matching the estimate
+            for i in range(len(self._token_history) - 1, -1, -1):
+                ts, tokens = self._token_history[i]
+                if tokens == estimated:
+                    self._token_history[i] = (ts, actual)
+                    logger.debug(f"Corrected token estimate: {estimated} → {actual}")
+                    break
 
-_rate_limiter = _TokenBucketRateLimiter(rpm=LLM_RATE_LIMIT_RPM)
+
+_rate_limiter = _TokenAwareRateLimiter(tpm_limit=140000)  # Groq free tier: 140k TPM
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +238,9 @@ def _call_groq(
     """
     Call Groq API with JSON mode. Returns a schema-validated Pydantic object.
     Raises LLMError on auth/timeout/parse failures.
+    
+    Section 6A: Uses token-aware rate limiter - estimates tokens before call,
+    corrects with actual usage after.
     """
     try:
         from groq import Groq
@@ -218,6 +275,10 @@ def _call_groq(
     if _model in _REASONING_MODELS:
         extra_params["reasoning_effort"] = LLM_REASONING_EFFORT
 
+    # Section 6A: Estimate tokens and acquire budget BEFORE calling API
+    estimated = _rate_limiter.estimate_tokens(system_msg + prompt)
+    _rate_limiter.acquire(estimated)
+
     try:
         response = client.chat.completions.create(
             model=_model,
@@ -231,16 +292,16 @@ def _call_groq(
             timeout=LLM_TIMEOUT_SECONDS,
             **extra_params,
         )
+        
+        # Section 6A: Correct token estimate with actual usage from response
+        actual_tokens = response.usage.total_tokens if response.usage else estimated
+        _rate_limiter.correct_actual_tokens(estimated, actual_tokens)
+        
     except Exception as exc:
         exc_str = str(exc)
-        # If the API tells us exactly how long to wait, respect it
+        # If still hit 429 despite rate limiter, log warning but don't retry here
         if "429" in exc_str or "rate_limit" in exc_str.lower():
-            import re
-            m = re.search(r"try again in ([0-9.]+)s", exc_str)
-            if m:
-                wait_s = float(m.group(1)) + 1.0
-                logger.warning("Rate limit hit — sleeping %.1fs as instructed", wait_s)
-                time.sleep(wait_s)
+            logger.warning("Rate limit exceeded despite token-aware limiter: %s", exc_str)
         raise LLMError(f"Groq API call failed: {exc}") from exc
 
     raw = response.choices[0].message.content
@@ -333,10 +394,8 @@ def call_llm(
         except Exception:
             pass  # stale/corrupt cache entry — fall through to live call
 
-    # --- Rate limiter ---
-    _rate_limiter.acquire()
-
     # --- Live call with retry ---
+    # Note: Token-aware rate limiting now happens INSIDE _call_groq() before API call
     @retry(
         stop=stop_after_attempt(LLM_MAX_RETRIES + 1),
         wait=wait_exponential(multiplier=2, min=LLM_RETRY_BACKOFF_MIN, max=LLM_RETRY_BACKOFF_MAX),
@@ -352,10 +411,6 @@ def call_llm(
             raise LLMError(f"Unknown provider: {_provider!r}. Set LLM_PROVIDER=groq or ollama in .env")
 
     result = _make_call()
-
-    # TPM guard: sleep between live calls to stay under the free-tier TPM ceiling.
-    # Value is config-driven (LLM_TPM_SLEEP_SECONDS). Cache hits bypass this entirely.
-    time.sleep(LLM_TPM_SLEEP_SECONDS)
 
     # --- Cache store ---
     _cache_put(record_id, phash, result.model_dump_json())

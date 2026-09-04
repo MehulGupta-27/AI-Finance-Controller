@@ -73,7 +73,7 @@ export default function ReviewQueue({ records, onSelect, showAll = false }) {
                 <td className={styles.date}>{r.date || '—'}</td>
                 <td className={styles.confidence}>
                   {r.confidence > 0
-                    ? <><ConfBar value={r.confidence} /> <span className={styles.confText}>{Math.round(r.confidence * 100)}% sure</span></>
+                    ? <ConfBar value={r.confidence} />
                     : <span style={{ color: '#ccc' }}>—</span>}
                 </td>
                 <td className={styles.source}>

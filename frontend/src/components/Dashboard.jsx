@@ -1,11 +1,14 @@
 import styles from './Dashboard.module.css'
 
-export default function Dashboard({ summary, actionLog }) {
+export default function Dashboard({ summary, actionLog, forecast }) {
   const {
     records_processed, matched, partial, unresolved,
     match_rate, processing_time_s, llm_calls, no_llm_pct, as_of_date,
     exact_match_count, fuzzy_auto_count,
   } = summary
+
+  // Forecast data (if available)
+  const hasForecast = forecast && forecast.pending_settlements && forecast.pending_settlements.length > 0
 
   return (
     <div className={styles.page}>
@@ -49,6 +52,70 @@ export default function Dashboard({ summary, actionLog }) {
           bg={match_rate >= 85 ? '#f0fdf4' : '#fffbeb'}
         />
       </div>
+
+      {/* Cash Flow Forecast */}
+      {hasForecast && (
+        <div className={styles.card}>
+          <h2 className={styles.cardTitle}>💰 Expected Cash Inflow</h2>
+          <p className={styles.subtitle} style={{ marginTop: '-8px', marginBottom: '16px' }}>
+            Based on {forecast.median_settlement_lag_days}-day median settlement lag from {matched} reconciled payments
+          </p>
+          
+          <div style={{ display: 'flex', gap: '24px', marginBottom: '20px' }}>
+            <div className={styles.forecastBox}>
+              <div className={styles.forecastLabel}>Next 7 days</div>
+              <div className={styles.forecastAmount}>
+                ₹{forecast.expected_inflow_next_7_days?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </div>
+              <div className={styles.forecastCount}>
+                {forecast.pending_settlements.filter(p => p.days_until_settlement <= 7).length} pending payments
+              </div>
+            </div>
+            
+            <div className={styles.forecastBox}>
+              <div className={styles.forecastLabel}>Next 30 days</div>
+              <div className={styles.forecastAmount}>
+                ₹{forecast.expected_inflow_next_30_days?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </div>
+              <div className={styles.forecastCount}>
+                {forecast.pending_settlements.length} pending payments
+              </div>
+            </div>
+          </div>
+
+          <details className={styles.forecastDetails}>
+            <summary className={styles.forecastSummary}>
+              View payment-by-payment breakdown
+            </summary>
+            <table className={styles.forecastTable}>
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Captured</th>
+                  <th>Expected Settlement</th>
+                  <th>Days Until</th>
+                </tr>
+              </thead>
+              <tbody>
+                {forecast.pending_settlements.map((p, i) => (
+                  <tr key={i}>
+                    <td>{p.customer || p.order_id}</td>
+                    <td>₹{p.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td>{p.captured_date}</td>
+                    <td>{p.expected_settlement_date}</td>
+                    <td>
+                      <span className={p.days_until_settlement <= 2 ? styles.urgentDays : ''}>
+                        {p.days_until_settlement === 1 ? 'Tomorrow' : `${p.days_until_settlement} days`}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
+        </div>
+      )}
 
       {/* How it was resolved */}
       <div className={styles.row}>

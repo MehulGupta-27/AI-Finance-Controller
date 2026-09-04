@@ -63,7 +63,11 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
 
     Returns
     -------
-    (PipelineRunResult, list[RouteResult], dict[str, dict])
+    (PipelineRunResult, list[RouteResult], dict[str, dict], dict)
+        - PipelineRunResult: summary statistics
+        - list[RouteResult]: one per input record with full routing decision
+        - dict[str, dict]: raw_lookup with customer, amount, date fields
+        - dict: cash flow forecast with pending settlements and expected inflows
         - PipelineRunResult: summary statistics and record IDs by status
         - list[RouteResult]:  full routing decisions with Explanation objects
         - dict[str, dict]:    raw display fields keyed by record_id
@@ -140,7 +144,14 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
     for bank_rec in fuzzy.unmatched_bank:        # unidentified_bank_credit
         primary_input_ids.append(bank_rec.record_id)
 
-    all_input_ids = primary_input_ids
+    # Deduplicate - a ledger record may appear in multiple exact.matched_pairs
+    # (duplicate_capture case where same ledger ID has multiple Rzp attempts)
+    all_input_ids = list(dict.fromkeys(primary_input_ids))  # preserve order, remove dups
+    if len(all_input_ids) != len(primary_input_ids):
+        _pipe_log.warning(
+            f"Deduplicated {len(primary_input_ids) - len(all_input_ids)} duplicate "
+            f"ID(s) in primary_input_ids (likely duplicate_capture cases)"
+        )
     _pipe_log.info(f"Primary transaction IDs to track: {len(all_input_ids)}")
 
     # -----------------------------------------------------------------------
@@ -175,11 +186,15 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
     # Build ledger_id->exact_pair map for failed-orphan detection
     ledger_to_exact_pair = {pair.ledger_record.record_id: pair for pair in exact.matched_pairs}
 
+    # Track which record IDs have been routed to prevent duplicates
+    routed_ids: set[str] = set()
+
     # 1. Failed payment orphans — exact-matched, no bank needed, final result here
     for pair in exact.matched_pairs:
         if pair.is_failed:
             route = route_exact_match(pair)
             all_results.append(route)
+            routed_ids.add(route.record_id)
             log_exact_match(route.record_id, pair.order_id, route.status, route.sub_reason)
             log_routing(route.record_id, route.status, route.sub_reason,
                         route.confidence, route.source, route.explanation.headline)
@@ -191,6 +206,11 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
         raw_route = route_fuzzy_auto_match(pair, as_of)
         ledger_rid = rzp_to_ledger_id.get(pair.rzp_record.record_id,
                                           pair.rzp_record.record_id)
+        
+        if ledger_rid in routed_ids:
+            _pipe_log.warning(f"Skipping duplicate route for {ledger_rid} (already routed)")
+            continue
+        
         route = RouteResult(
             record_id   = ledger_rid,
             status      = raw_route.status,
@@ -200,6 +220,7 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
             source      = raw_route.source,
         )
         all_results.append(route)
+        routed_ids.add(ledger_rid)
         log_fuzzy_match(pair.rzp_record.record_id, pair.scores.composite, route.status)
         log_routing(route.record_id, route.status, route.sub_reason,
                     route.confidence, route.source, route.explanation.headline)
@@ -209,6 +230,11 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
         raw_route = route_llm_result(vr, as_of)
         ledger_rid = rzp_to_ledger_id.get(vr.pair.rzp_record.record_id,
                                           vr.pair.rzp_record.record_id)
+        
+        if ledger_rid in routed_ids:
+            _pipe_log.warning(f"Skipping duplicate route for {ledger_rid} (already routed)")
+            continue
+        
         route = RouteResult(
             record_id   = ledger_rid,
             status      = raw_route.status,
@@ -218,6 +244,7 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
             source      = raw_route.source,
         )
         all_results.append(route)
+        routed_ids.add(ledger_rid)
         a4 = vr.agent4_result
         log_llm_reasoning(route.record_id, a4.decision, a4.confidence,
                           a4.semantic_similarity, tokens=0, latency_ms=0,
@@ -234,6 +261,11 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
     for pair, err in a4_errors:
         ledger_rid = rzp_to_ledger_id.get(pair.rzp_record.record_id,
                                           pair.rzp_record.record_id)
+        
+        if ledger_rid in routed_ids:
+            _pipe_log.warning(f"Skipping duplicate route for {ledger_rid} (already routed)")
+            continue
+        
         route = RouteResult(
             record_id   = ledger_rid,
             status      = "UNRESOLVED",
@@ -243,6 +275,7 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
             source      = "llm",
         )
         all_results.append(route)
+        routed_ids.add(ledger_rid)
         log_routing(route.record_id, route.status, route.sub_reason,
                     route.confidence, route.source, route.explanation.headline)
 
@@ -259,6 +292,11 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
         route = route_pending_settlement(rzp_rec, as_of)
         # Use ledger record_id so the invariant check matches all_input_ids
         ledger_rid = rzp_to_ledger_id.get(rzp_rec.record_id, rzp_rec.record_id)
+        
+        if ledger_rid in routed_ids:
+            _pipe_log.warning(f"Skipping duplicate route for {ledger_rid} (already routed)")
+            continue
+        
         route = RouteResult(
             record_id   = ledger_rid,
             status      = route.status,
@@ -268,27 +306,39 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
             source      = route.source,
         )
         all_results.append(route)
+        routed_ids.add(ledger_rid)
         log_routing(route.record_id, route.status, route.sub_reason,
                     route.confidence, route.source, route.explanation.headline)
 
     # 6. Missing-ledger pairs (Rzp+Bank matched, no ledger row)
     for pair in fuzzy.missing_ledger_pairs:
         route = route_missing_ledger(pair, as_of)
+        
+        if route.record_id in routed_ids:
+            _pipe_log.warning(f"Skipping duplicate route for {route.record_id} (already routed)")
+            continue
+        
         all_results.append(route)
+        routed_ids.add(route.record_id)
         log_routing(route.record_id, route.status, route.sub_reason,
                     route.confidence, route.source, route.explanation.headline)
 
     # 7. Unidentified bank credits (bank row with no Rzp counterpart)
     for bank_rec in fuzzy.unmatched_bank:
         route = route_unidentified_bank_credit(bank_rec)
+        
+        if route.record_id in routed_ids:
+            _pipe_log.warning(f"Skipping duplicate route for {route.record_id} (already routed)")
+            continue
+        
         all_results.append(route)
+        routed_ids.add(route.record_id)
         log_routing(route.record_id, route.status, route.sub_reason,
                     route.confidence, route.source, route.explanation.headline)
 
     # 8. Catch-all: any input record_id not yet routed gets UNRESOLVED.
     #    This should be empty on a correctly-wired dataset — if it fires,
     #    it means a routing path has a gap.
-    routed_ids = {r.record_id for r in all_results}
     for rid in all_input_ids:
         if rid not in routed_ids:
             _pipe_log.warning(f"UNROUTED record: {rid} — routing to no_candidates_found")
@@ -301,6 +351,7 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
                 source      = "direct",
             )
             all_results.append(route)
+            routed_ids.add(rid)
             log_routing(route.record_id, route.status, route.sub_reason,
                         route.confidence, route.source, route.explanation.headline)
 
@@ -328,6 +379,7 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
         partial_ids            = partial_ids,
         unresolved_ids         = unresolved_ids,
         results                = record_results,
+        as_of_date             = str(as_of),
         total_runtime_seconds  = time.time() - t_start,
         llm_calls_made         = llm_call_count,
         llm_tokens_used        = llm_token_count,
@@ -362,12 +414,8 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
                    f"({(total - llm_call_count) / total * 100:.0f}%)")
 
     # -----------------------------------------------------------------------
-    # Agent 9 — Index records into ChromaDB for Q&A
+    # Build raw_lookup for cash flow forecast and Q&A indexing
     # -----------------------------------------------------------------------
-    _pipe_log.info("\nIndexing records for Q&A agent...")
-    from agents.qa_agent import index_reconciled_records
-
-    # Build record_id → raw_fields lookup
     raw_lookup: dict[str, dict] = {}
     for led in ing.ledger_records:
         raw_lookup[led.record_id] = {
@@ -377,11 +425,13 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
             "notes":     led.notes or "",
             "amount":    float(led.amount),
             "date":      led.date,
+            "captured_date": None,  # will be filled from Razorpay if matched
+            "settled_date":  None,  # will be filled from Bank if matched
         }
     for rzp in ing.razorpay_records:
         if rzp.record_id in raw_lookup:
-            # Already have ledger entry — keep ledger notes/customer
-            pass
+            # Already have ledger entry — add Razorpay captured_date
+            raw_lookup[rzp.record_id]["captured_date"] = rzp.date
         else:
             raw_lookup[rzp.record_id] = {
                 "customer":  rzp.text_field,  # often blank or minimal
@@ -390,6 +440,8 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
                 "notes":     "",
                 "amount":    float(rzp.amount),
                 "date":      rzp.date,
+                "captured_date": rzp.date,
+                "settled_date":  None,
             }
     for bank in ing.bank_records:
         if bank.record_id not in raw_lookup:
@@ -400,7 +452,69 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
                 "notes":     "",
                 "amount":    float(bank.amount),
                 "date":      bank.date,
+                "captured_date": None,
+                "settled_date":  bank.date,
             }
+    
+    # For matched pairs, populate captured_date from Razorpay
+    for pair in exact.matched_pairs:
+        led_id = pair.ledger_record.record_id
+        if led_id in raw_lookup:
+            # Get the Razorpay captured date
+            if pair.rzp_records:
+                raw_lookup[led_id]["captured_date"] = pair.rzp_records[0].date
+    
+    # For fuzzy-matched pairs, populate settled_date AND bank narration
+    # This includes both auto-matched and LLM-verified pairs
+    for pair in fuzzy.auto_matched_pairs:
+        rzp_id = pair.rzp_record.record_id
+        # Find ledger_id that corresponds to this rzp
+        led_id = rzp_to_ledger_id.get(rzp_id, rzp_id)
+        if led_id in raw_lookup:
+            raw_lookup[led_id]["settled_date"] = pair.bank_record.date
+            # Populate bank narration for semantic search (critical for Q&A)
+            # This is essential: "FITZONE WELLNESS PVT LTD" enables queries like "gym membership"
+            raw_lookup[led_id]["narration"] = pair.bank_record.text_field
+    
+    # Also populate bank narration for LLM-verified pairs (Agent 4/5 approved matches)
+    for vr in ver_results:
+        rzp_id = vr.pair.rzp_record.record_id
+        led_id = rzp_to_ledger_id.get(rzp_id, rzp_id)
+        if led_id in raw_lookup:
+            # These were already marked MATCHED by Agent 5, populate their bank narration
+            raw_lookup[led_id]["narration"] = vr.pair.bank_record.text_field
+
+    # -----------------------------------------------------------------------
+    # Section 8B — Cash Flow Forecast
+    # -----------------------------------------------------------------------
+    _pipe_log.info("\nGenerating cash flow forecast...")
+    from agents.reporting_agent import forecast_cash_inflow
+    
+    forecast = forecast_cash_inflow(
+        results=record_results,
+        raw_lookup=raw_lookup,
+        as_of_date=as_of,
+    )
+    
+    _pipe_log.info(f"Cash flow forecast:")
+    _pipe_log.info(f"  Median settlement lag: {forecast['median_settlement_lag_days']} days")
+    _pipe_log.info(f"  Pending settlements: {len(forecast['pending_settlements'])}")
+    _pipe_log.info(f"  Expected inflow (next 7 days): Rs.{forecast['expected_inflow_next_7_days']:,.2f}")
+    _pipe_log.info(f"  Expected inflow (next 30 days): Rs.{forecast['expected_inflow_next_30_days']:,.2f}")
+    
+    # Per-record breakdown
+    if forecast['pending_settlements']:
+        _pipe_log.info(f"\n  Per-record breakdown:")
+        for p in forecast['pending_settlements']:
+            _pipe_log.info(f"    {p['customer']:20s} Rs.{p['amount']:>10,.2f} | "
+                          f"captured: {p['captured_date']} -> expected: {p['expected_settlement_date']} "
+                          f"(+{p['days_until_settlement']} days)")
+
+    # -----------------------------------------------------------------------
+    # Agent 9 — Index records into ChromaDB for Q&A
+    # -----------------------------------------------------------------------
+    _pipe_log.info("\nIndexing records for Q&A agent...")
+    from agents.qa_agent import index_reconciled_records
 
     # Parallel list of raw_fields aligned with all_results
     raw_fields_list = [raw_lookup.get(r.record_id, {
@@ -411,7 +525,7 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
     indexed_count = index_reconciled_records(record_results, raw_fields_list)
     _pipe_log.info(f"OK Indexed {indexed_count} records for Q&A")
 
-    return run_result, all_results, raw_lookup
+    return run_result, all_results, raw_lookup, forecast
 
 
 if __name__ == "__main__":

@@ -149,3 +149,84 @@
 .ab_approve     { background: #dcfce7; color: #16a34a; }
 .ab_reject      { background: #fee2e2; color: #dc2626; }
 .ab_manual_link { background: #dbeafe; color: #2563eb; }
+
+/* Cash Flow Forecast */
+.forecastBox {
+  flex: 1;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.forecastLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.forecastAmount {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.forecastCount {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.forecastDetails {
+  margin-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.forecastSummary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2563eb;
+  padding: 8px 0;
+  user-select: none;
+}
+
+.forecastSummary:hover {
+  color: #1d4ed8;
+}
+
+.forecastTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.forecastTable th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #6b7280;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e5e7eb;
+  font-weight: 600;
+}
+
+.forecastTable td {
+  padding: 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.forecastTable tbody tr:hover {
+  background: #f9fafb;
+}
+
+.urgentDays {
+  color: #dc2626;
+  font-weight: 600;
+}

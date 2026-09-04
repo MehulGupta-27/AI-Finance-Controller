@@ -133,7 +133,7 @@ export default function App() {
       </header>
 
       <main className={styles.main}>
-        {activeTab === 'dashboard' && <Dashboard summary={data.summary} actionLog={actionLog} />}
+        {activeTab === 'dashboard' && <Dashboard summary={data.summary} actionLog={actionLog} forecast={data.forecast} />}
         {activeTab === 'review'    && <ReviewQueue records={needsReview} onSelect={setSelectedRecord} />}
         {activeTab === 'all'       && <ReviewQueue records={data.records} onSelect={setSelectedRecord} showAll />}
         {activeTab === 'qa'        && <QAChat />}
