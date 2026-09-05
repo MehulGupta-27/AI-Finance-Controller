@@ -11,7 +11,7 @@ Responsibilities:
 - Supports both the 110-record dev set (data/raw_100/) and the full set (data/raw/)
 
 Usage:
-    from agents.data_loader import load_raw_data
+    from agents.utils.data_loader import load_raw_data
     ledger_df, rzp_df, bank_df = load_raw_data()          # defaults to raw_100
     ledger_df, rzp_df, bank_df = load_raw_data("data/raw") # full set
 """

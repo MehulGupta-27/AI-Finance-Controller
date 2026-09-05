@@ -44,7 +44,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from agents.config import (
+from agents.utils.config import (
     LLM_MAX_TOKENS_PER_CALL,
     LLM_TIMEOUT_SECONDS,
     LLM_MAX_RETRIES,
@@ -215,12 +215,26 @@ class _TokenAwareRateLimiter:
                     break
 
 
-_rate_limiter = _TokenAwareRateLimiter(tpm_limit=140000)  # Groq free tier: 140k TPM
+_rate_limiter = _TokenAwareRateLimiter(tpm_limit=8000)  # Groq free tier: 8K TPM (source: console.groq.com/docs/rate-limits)
+
+# Global token usage tracker (for reporting in pipeline summary)
+_total_tokens_used = 0
 
 
 # ---------------------------------------------------------------------------
 # Custom exception — calling agents catch this and route to UNRESOLVED
 # ---------------------------------------------------------------------------
+def get_total_tokens_used() -> int:
+    """Return cumulative tokens used across all LLM calls this session."""
+    return _total_tokens_used
+
+
+def reset_token_counter() -> None:
+    """Reset the global token counter (call at pipeline start)."""
+    global _total_tokens_used
+    _total_tokens_used = 0
+
+
 class LLMError(Exception):
     """Raised when an LLM call fails after all retries."""
     pass
@@ -297,6 +311,11 @@ def _call_groq(
         actual_tokens = response.usage.total_tokens if response.usage else estimated
         _rate_limiter.correct_actual_tokens(estimated, actual_tokens)
         
+        # Track total tokens globally for pipeline reporting
+        global _total_tokens_used
+        _total_tokens_used += actual_tokens
+        logger.info(f"LLM call: {actual_tokens} tokens (cumulative: {_total_tokens_used})")
+        
     except Exception as exc:
         exc_str = str(exc)
         # If still hit 429 despite rate limiter, log warning but don't retry here
@@ -326,7 +345,7 @@ def _call_ollama(
     except ImportError:
         raise LLMError("ollama package not installed — run: pip install ollama")
 
-    from agents.config import OLLAMA_MODEL
+    from agents.utils.config import OLLAMA_MODEL
     _model = model or OLLAMA_MODEL
     schema_json = json.dumps(schema.model_json_schema(), indent=2)
     full_prompt = (

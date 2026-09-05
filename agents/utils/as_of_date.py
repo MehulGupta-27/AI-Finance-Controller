@@ -8,7 +8,7 @@ Every elapsed-time comparison elsewhere in the codebase must receive this
 value explicitly — never recompute it, never substitute the wall clock.
 
 Usage:
-    from agents.as_of_date import compute_as_of_date
+    from agents.utils.as_of_date import compute_as_of_date
     AS_OF_DATE = compute_as_of_date(ledger_df, rzp_df, bank_df)
 """
 
@@ -84,8 +84,8 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
-    from agents.data_loader import load_raw_data
-    from agents.config import BASE_DATE, DAY_SPAN
+    from agents.utils.data_loader import load_raw_data
+    from agents.utils.config import BASE_DATE, DAY_SPAN
     from datetime import timedelta
 
     ledger_df, rzp_df, bank_df = load_raw_data()

@@ -36,13 +36,13 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from agents.config import GROQ_QA_MODEL, MERCHANT_PROFILE
-from agents.llm_provider import call_llm, LLMError
-from agents.reporting_agent import RecordResult
+from agents.utils.config import GROQ_QA_MODEL, MERCHANT_PROFILE
+from agents.utils.llm_provider import call_llm, LLMError
+from agents.core.reporting_agent import RecordResult
 
 logger = logging.getLogger(__name__)
 
@@ -250,7 +250,8 @@ def query(
     max_amount:      Optional[float] = None,
     date_from:       Optional[str] = None,    # "YYYY-MM-DD"
     date_to:         Optional[str] = None,
-) -> str:
+    return_records:  bool = False,            # NEW: return (answer, records, distances) instead of just answer
+) -> str | tuple[str, list[dict], list[float]]:
     """
     Answer a natural-language question about the reconciled dataset.
 
@@ -262,10 +263,12 @@ def query(
     min_amount    : only records with amount >= this
     max_amount    : only records with amount <= this
     date_from/to  : date range filter (ISO strings)
+    return_records: if True, return (answer, records_list, distances) tuple
 
     Returns
     -------
-    Plain-text answer grounded in retrieved records.
+    Plain-text answer grounded in retrieved records (default).
+    OR tuple of (answer, list[dict], list[float]) if return_records=True.
     """
     collection = _get_collection()
     embedder   = _get_embedder()
@@ -356,7 +359,6 @@ def query(
         answer = result.answer
         answer = answer.replace('\u2013', '-')  # en-dash → hyphen
         answer = answer.replace('\u2014', '-')  # em-dash → hyphen
-        return answer
     except LLMError as e:
         logger.warning("QA LLM call failed: %s", e)
         # Fallback: return a structured plain-text answer from the retrieved records
@@ -371,7 +373,24 @@ def query(
                 f"  • {status}{' (' + sub + ')' if sub else ''} — "
                 f"Rs.{amt:,.2f} on {dt}{' — ' + cust if cust else ''}"
             )
-        return "\n".join(lines)
+        answer = "\n".join(lines)
+    
+    # Return records if requested (for API use)
+    if return_records:
+        records_list = [
+            {
+                "status":     meta.get("status", ""),
+                "sub_reason": meta.get("sub_reason", ""),
+                "amount":     float(meta.get("amount", 0)),
+                "date":       meta.get("date", ""),
+                "customer":   meta.get("customer", ""),
+                "notes":      meta.get("notes", ""),
+            }
+            for meta in metas
+        ]
+        return answer, records_list, distances
+    
+    return answer
 
 
 # ---------------------------------------------------------------------------
@@ -470,7 +489,7 @@ if __name__ == "__main__":
         print("\n=== Agent 9 smoke test ===\n")
 
         # Index some synthetic records to test retrieval
-        from agents.reporting_agent import RecordResult
+        from agents.core.reporting_agent import RecordResult
 
         synthetic_records = [
             RecordResult(record_id="t1", status="MATCHED",    sub_reason=None,                     confidence=1.0),

@@ -1,88 +1,82 @@
 # AI Finance Controller
 
-Automatically reconciles payments across three financial systems — your internal order book, Razorpay, and your bank statement — so your finance team spends time on exceptions, not on matching rows by hand.
-
-Built for the Razorpay Buildathon, Track 04.
-
----
+Automated reconciliation system for a Razorpay-based business. Matches payments across three data sources — internal ledger, Razorpay export, and bank statement — and classifies every transaction as MATCHED, PARTIAL, or UNRESOLVED.
 
 ## What it does
 
-Every time a customer pays you, three separate systems each record part of that transaction:
+Every day, three files come in:
+- **Internal Ledger** — what the business recorded as sold
+- **Razorpay Export** — what the payment gateway captured
+- **Bank Statement** — what actually landed in the bank account
 
-- **Your order book** (internal ledger) records the sale
-- **Razorpay** records the payment capture and deducts its fee
-- **Your bank** receives the net deposit, usually 1–3 days later
+These three rarely line up cleanly. Bank narrations are garbled, settlements arrive days late, refunds change amounts, and some payments fail entirely. This system reconciles all of it automatically using a 9-agent pipeline.
 
-Normally these three records match cleanly. But in a real business they often don't: bank descriptions are garbled, settlements arrive late, refunds split amounts, payments fail, or a payment bypasses your system entirely. Checking these manually across hundreds of transactions every month takes real hours.
+## Tech Stack
 
-This system runs through all three sources automatically, matches what it can with certainty, and surfaces only the genuinely unclear cases for human review — with a plain-English explanation of exactly why each case was flagged and what to do about it.
+| Layer | Technology |
+|---|---|
+| Pipeline / Agents | Python 3.11 |
+| LLM Reasoning (Agent 4) | Groq — `openai/gpt-oss-20b` |
+| LLM Verification (Agent 5) | Groq — `openai/gpt-oss-120b` |
+| Q&A Semantic Search | ChromaDB + sentence-transformers |
+| API | FastAPI |
+| Frontend | React + Vite |
+| Fuzzy Matching | rapidfuzz |
+| Optimal Assignment | scipy (Hungarian algorithm) |
 
----
+## Project Structure
 
-## Quick start
+```
+agents/
+├── core/           9 agent files (ingestion → cash flow)
+├── utils/          config, llm provider, data loader, audit logger
+└── pipeline.py     full end-to-end runner
+
+api/
+└── main.py         FastAPI endpoints
+
+frontend/
+└── src/            React dashboard + review queue + Q&A chat
+
+data/
+├── raw/            550-record full dataset
+└── raw_100/        110-record dev dataset
+
+tests/              6 pytest test files
+docs/               ARCHITECTURE.md, DATA_GUIDE.md
+```
+
+## Quick Start
 
 ```bash
-# 1. Activate the virtual environment (every time you open a terminal)
-venv\Scripts\activate          # Windows
-source venv/bin/activate       # Mac / Linux
+# Install dependencies
+pip install -r requirements.txt
 
-# 2. Run the full reconciliation pipeline
+# Run pipeline (110-record dev set)
 python agents/pipeline.py
 
-# 3. Ask questions about the results
-python agents/qa_agent.py --query "any gym membership payments this month?"
+# Run pipeline (full 550-record set)
+python agents/pipeline.py --data data/raw
 
-# 4. Start the interactive Q&A session
-python agents/qa_agent.py --interactive
+# Start API server
+uvicorn api.main:app --reload
 
-# 5. Start the frontend dashboard
+# Start frontend (separate terminal)
 cd frontend && npm run dev
+
+# Run tests
+pytest tests/
 ```
 
----
+## Output Statuses
 
-## Project structure
-
-```
-agents/           Reconciliation logic (all the intelligence lives here)
-data/raw_100/     110-record development dataset (3 CSV files)
-data/raw/         Full 550-record dataset (generated when ready)
-data/ground_truth/  Known-correct answers for accuracy testing
-frontend/         React dashboard — human review queue + Q&A chat
-db/               SQLite databases (audit log, LLM response cache)
-chroma_db/        Vector search index for the Q&A agent
-tests/            Automated regression tests
-docs/             Documentation
-outputs/reports/  Generated accuracy reports
-```
-
----
-
-## How it works — plain English
-
-See [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) for a full walkthrough of every step.
-
-See [docs/DATA_GUIDE.md](docs/DATA_GUIDE.md) for a guide to the data fields and record categories.
-
----
-
-## Tech stack
-
-| What | Choice |
+| Status | Meaning |
 |---|---|
-| Language | Python 3.11+ |
-| AI models | Groq `openai/gpt-oss-20b` (reasoning) + `openai/gpt-oss-120b` (verification) |
-| Semantic search | ChromaDB + sentence-transformers `all-MiniLM-L6-v2` |
-| Data handling | Pandas, RapidFuzz, scipy |
-| Backend API | FastAPI |
-| Frontend | React + Vite |
-| Tests | pytest (28 tests) |
+| **MATCHED** | All three sources confirmed — transaction fully reconciled |
+| **PARTIAL** | Partially confirmed — e.g. payment captured but bank deposit not yet arrived |
+| **UNRESOLVED** | Needs human review — conflicting signals or missing data |
 
----
+## Docs
 
-## Accuracy
-
-Tested against a 110-record dataset covering 11 real-world reconciliation exception types. The held-out test set accuracy report is generated by running `python agents/reporting_agent.py` after the full pipeline run.
-
-Key design decision: the system uses three outcomes — **Reconciled**, **In Progress**, and **Needs Review** — never just match/no-match. "Waiting for bank settlement" and "genuinely ambiguous" require completely different actions, so they get different labels. See [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) for why this matters.
+- `docs/ARCHITECTURE.md` — all 9 agents explained with examples and data flow
+- `docs/DATA_GUIDE.md` — CSV files, every field explained, how they link together

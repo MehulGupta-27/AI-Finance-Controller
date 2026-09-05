@@ -36,7 +36,7 @@ LLM_RETRY_BACKOFF_MAX = 30               # tenacity wait_exponential max seconds
 LLM_REASONING_EFFORT = "low"             # caps internal reasoning tokens for gpt-oss-20b
 
 # ---------------------------------------------------------------------------
-# Business rules (Agent 6 router)
+# Business rules (Agent 6 classifier)
 # ---------------------------------------------------------------------------
 HIGH_VALUE_REVIEW_THRESHOLD_RUPEES = 50_000   # always human-reviewed regardless of confidence
 PARTIAL_REFUND_TOLERANCE_PCT = 0.50           # sanity guard: refund can't exceed 50% of amount
@@ -61,6 +61,11 @@ GROQ_REASONING_MODEL = "openai/gpt-oss-20b"          # Agent 4 — requires reas
 GROQ_VERIFIER_MODEL  = "openai/gpt-oss-120b"         # Agent 5 — strongest free-tier option
 GROQ_QA_MODEL        = "openai/gpt-oss-20b"          # Agent 9
 OLLAMA_MODEL         = "llama3.1:8b-instruct"         # dev only, never for reported numbers
+
+# ---------------------------------------------------------------------------
+# Q&A Agent (Agent 9) — semantic search and response generation
+# ---------------------------------------------------------------------------
+QA_MIN_SIMILARITY_THRESHOLD = 0.20    # queries with max similarity < 20% return empty records
 
 # ---------------------------------------------------------------------------
 # Dataset constants — imported by tests so they don't hardcode date ranges

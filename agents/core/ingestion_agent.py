@@ -25,7 +25,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Optional
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
-    from agents.data_loader import load_raw_data
+    from agents.utils.data_loader import load_raw_data
 
     ledger_df, rzp_df, bank_df = load_raw_data()
     result = ingest(ledger_df, rzp_df, bank_df)

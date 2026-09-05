@@ -1,13 +1,19 @@
 """
-agents/router.py  —  Agent 6
-Confidence Router — the single, explicit, deterministic policy table.
+agents/classifier_agent.py  —  Classifier Agent (Agent 6)
 
-Section 5/6B: Routes every record to exactly one of MATCHED / PARTIAL / UNRESOLVED.
-Never binary. The routing table is written as literal readable conditional logic,
-not a scoring function. Every AS_OF_DATE comparison uses the fixed value from Agent 0.
+Classifies every record into exactly one final status (MATCHED / PARTIAL / UNRESOLVED)
+by applying deterministic business rules and confidence thresholds.
 
-Also assembles the structured explanation object (Section 6D) for every record
-using deterministic string templates — no additional LLM call.
+Also generates structured plain-English explanations for every classification decision,
+providing context for human reviewers without additional LLM calls.
+
+Key Responsibilities:
+1. Final status classification using explicit conditional logic (not scoring)
+2. Business rule enforcement (high-value gate, settlement timing, confidence thresholds)
+3. Human-readable explanation generation (headlines, checklists, recommendations, risk flags)
+
+Every AS_OF_DATE comparison uses the fixed value from Agent 0.
+Section 5/6B implementation.
 """
 
 import logging
@@ -18,11 +24,11 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from agents.config import (
+from agents.utils.config import (
     FUZZY_AUTO_MATCH_THRESHOLD,
     LLM_CONFIDENCE_AUTO_CONFIRM,
     OVERDUE_SETTLEMENT_DAYS,
@@ -30,11 +36,11 @@ from agents.config import (
     SKIP_VERIFICATION_CONFIDENCE,
     SKIP_VERIFICATION_MAX_AMOUNT,
 )
-from agents.exact_match_agent import ExactMatchPair, ExactMatchResult
-from agents.fuzzy_match_agent import FuzzyMatchPair, FuzzyMatchResult
-from agents.ingestion_agent import CanonicalRecord
-from agents.llm_reasoning_agent import Agent4Result
-from agents.verifier_agent import VerificationResult, should_skip_verification
+from agents.core.exact_match_agent import ExactMatchPair, ExactMatchResult
+from agents.core.fuzzy_match_agent import FuzzyMatchPair, FuzzyMatchResult
+from agents.core.ingestion_agent import CanonicalRecord
+from agents.core.llm_reasoning_agent import Agent4Result
+from agents.core.verifier_agent import VerificationResult, should_skip_verification
 
 logger = logging.getLogger(__name__)
 

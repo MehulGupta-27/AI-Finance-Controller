@@ -31,13 +31,13 @@ from typing import Optional
 from collections import defaultdict
 
 # Ensure project root is on sys.path when this module is imported directly
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from pydantic import BaseModel
 
-from agents.ingestion_agent import CanonicalRecord
+from agents.core.ingestion_agent import CanonicalRecord
 
 logger = logging.getLogger(__name__)
 
@@ -166,8 +166,8 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
-    from agents.data_loader import load_raw_data
-    from agents.ingestion_agent import ingest
+    from agents.utils.data_loader import load_raw_data
+    from agents.core.ingestion_agent import ingest
 
     ledger_df, rzp_df, bank_df = load_raw_data()
     ing = ingest(ledger_df, rzp_df, bank_df)

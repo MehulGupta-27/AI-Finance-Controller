@@ -52,11 +52,11 @@ from scipy.optimize import linear_sum_assignment
 from rapidfuzz import fuzz
 from pydantic import BaseModel
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]  # Go up 2 levels now (core -> agents -> root)
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from agents.config import (
+from agents.utils.config import (
     FUZZY_MATCH_WEIGHTS,
     FUZZY_AUTO_MATCH_THRESHOLD,
     FUZZY_MIN_CANDIDATE_THRESHOLD,
@@ -64,8 +64,8 @@ from agents.config import (
     AMOUNT_TOLERANCE_RUPEES,
     MERCHANT_PROFILE,
 )
-from agents.ingestion_agent import CanonicalRecord
-from agents.exact_match_agent import ExactMatchResult
+from agents.core.ingestion_agent import CanonicalRecord
+from agents.core.exact_match_agent import ExactMatchResult
 
 logger = logging.getLogger(__name__)
 
@@ -495,10 +495,10 @@ def run_fuzzy_match(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
-    from agents.data_loader import load_raw_data
-    from agents.ingestion_agent import ingest
-    from agents.exact_match_agent import run_exact_match
-    from agents.as_of_date import compute_as_of_date
+    from agents.utils.data_loader import load_raw_data
+    from agents.core.ingestion_agent import ingest
+    from agents.core.exact_match_agent import run_exact_match
+    from agents.utils.as_of_date import compute_as_of_date
 
     ledger_df, rzp_df, bank_df = load_raw_data()
     as_of = compute_as_of_date(ledger_df, rzp_df, bank_df)

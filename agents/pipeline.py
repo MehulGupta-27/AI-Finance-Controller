@@ -35,26 +35,26 @@ _handler = logging.StreamHandler(sys.stdout)
 _handler.setFormatter(logging.Formatter("%(message)s"))
 _pipe_log.addHandler(_handler)
 
-from agents.data_loader import load_raw_data
-from agents.as_of_date import compute_as_of_date
-from agents.ingestion_agent import ingest
-from agents.exact_match_agent import run_exact_match
-from agents.fuzzy_match_agent import run_fuzzy_match
-from agents.llm_reasoning_agent import reason_batch
-from agents.verifier_agent import verify_batch, should_skip_verification
-from agents.router import (
+from agents.utils.data_loader import load_raw_data
+from agents.utils.as_of_date import compute_as_of_date
+from agents.core.ingestion_agent import ingest
+from agents.core.exact_match_agent import run_exact_match
+from agents.core.fuzzy_match_agent import run_fuzzy_match
+from agents.core.llm_reasoning_agent import reason_batch
+from agents.core.verifier_agent import verify_batch, should_skip_verification
+from agents.core.classifier_agent import (
     route_exact_match, route_fuzzy_auto_match, route_llm_result,
     route_pending_settlement, route_missing_ledger, route_unidentified_bank_credit,
     RouteResult, _explain_unresolved,
 )
-from agents.audit_logger import (
+from agents.utils.audit_logger import (
     log_ingestion, log_exact_match, log_fuzzy_match, log_llm_reasoning,
     log_verification, log_routing, log_validation_failure,
 )
-from agents.reporting_agent import (
+from agents.core.reporting_agent import (
     PipelineRunResult, RecordResult, check_record_identity_invariant, basic_summary,
 )
-from agents.llm_provider import LLMError
+from agents.utils.llm_provider import LLMError
 
 
 def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteResult"], dict[str, dict]]:
@@ -99,6 +99,10 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
         _pipe_log.warning(f"Ingestion failure: {f.source} {f.source_ref} -- {f.detail}")
 
     _pipe_log.info(f"Ingested {ing.total_count} canonical records  ({len(ing.failures)} failures)")
+    
+    # Reset token counter at start of each pipeline run
+    from agents.utils.llm_provider import reset_token_counter
+    reset_token_counter()
 
     # -----------------------------------------------------------------------
     # Agent 2 — Exact Match
@@ -373,6 +377,10 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
         for r in all_results
     ]
 
+    # Build final run summary (to return)
+    from agents.utils.llm_provider import get_total_tokens_used
+    llm_token_count = get_total_tokens_used()
+    
     run_result = PipelineRunResult(
         input_record_ids       = all_input_ids,
         matched_ids            = matched_ids,
@@ -485,16 +493,36 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
             raw_lookup[led_id]["narration"] = vr.pair.bank_record.text_field
 
     # -----------------------------------------------------------------------
-    # Section 8B — Cash Flow Forecast
+    # Section 8B — Cash Flow Forecast (Agent 9)
     # -----------------------------------------------------------------------
     _pipe_log.info("\nGenerating cash flow forecast...")
-    from agents.reporting_agent import forecast_cash_inflow
+    from agents.core.cashflow_agent import forecast_cash_inflow, get_forecast_summary
     
-    forecast = forecast_cash_inflow(
+    forecast_result = forecast_cash_inflow(
         results=record_results,
         raw_lookup=raw_lookup,
         as_of_date=as_of,
     )
+    
+    # Convert to dict for backwards compatibility with API
+    forecast = {
+        "median_settlement_lag_days": forecast_result.median_settlement_lag_days,
+        "pending_settlements": [
+            {
+                "order_id": ps.order_id,
+                "customer": ps.customer,
+                "amount": ps.amount,
+                "captured_date": str(ps.captured_date),
+                "expected_settlement_date": str(ps.expected_settlement_date),
+                "days_since_capture": (as_of - ps.captured_date).days,
+                "days_until_settlement": ps.days_until_settlement,
+            }
+            for ps in forecast_result.pending_settlements
+        ],
+        "expected_inflow_next_7_days": forecast_result.expected_inflow_next_7_days,
+        "expected_inflow_next_30_days": forecast_result.expected_inflow_next_30_days,
+        "forecast_date": str(as_of),
+    }
     
     _pipe_log.info(f"Cash flow forecast:")
     _pipe_log.info(f"  Median settlement lag: {forecast['median_settlement_lag_days']} days")
@@ -514,7 +542,7 @@ def run_pipeline(data_dir: str = None) -> tuple[PipelineRunResult, list["RouteRe
     # Agent 9 — Index records into ChromaDB for Q&A
     # -----------------------------------------------------------------------
     _pipe_log.info("\nIndexing records for Q&A agent...")
-    from agents.qa_agent import index_reconciled_records
+    from agents.core.qa_agent import index_reconciled_records
 
     # Parallel list of raw_fields aligned with all_results
     raw_fields_list = [raw_lookup.get(r.record_id, {

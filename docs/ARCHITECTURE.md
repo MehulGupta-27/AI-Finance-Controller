@@ -1,573 +1,428 @@
-# AI Finance Controller - Architecture
+# Architecture & Data Flow
 
 ## Overview
 
-AI Finance Controller is an **automated payment reconciliation system** that matches online payment gateway records (Razorpay) with bank deposits and internal ledger entries. It uses a multi-agent AI pipeline to automatically verify transactions and flag issues for human review.
-
----
-
-## System Architecture
+The pipeline runs 9 agents in sequence. Each agent takes a well-defined input, does one job, and passes its output to the next. No agent loops back or calls another agent directly — the flow is strictly linear.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         DATA SOURCES                            │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Razorpay Export (CSV)    - Online payment gateway records   │
-│  2. Bank Statement (CSV)     - Actual bank deposits             │
-│  3. Internal Ledger (CSV)    - Your accounting system records   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    DATA INGESTION (Agent 1)                     │
-├─────────────────────────────────────────────────────────────────┤
-│  • Loads CSV files                                              │
-│  • Validates data quality                                       │
-│  • Standardizes formats (dates, amounts, text)                  │
-│  • Creates canonical records                                    │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    MATCHING PIPELINE                            │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  • Finds perfect matches (order ID in bank narration)     │  │
-│  │  • Highest confidence (95-98%)                            │  │
-│  │  Result: MATCHED                                          │  │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              ↓                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Agent 3: FUZZY MATCH                                     │  │
-│  │  • Matches on amount + date proximity                     │  │
-│  │  • Handles minor variations                               │  │
-│  │  • Confidence: 85-94%                                     │  │
-│  │  Result: MATCHED (if confidence ≥ threshold)              │  │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              ↓                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Agent 4: AI REASONING MATCH                              │  │
-│  │  • Uses LLM (Groq/llama-3.3-70b) for complex cases       │   │
-│  │  • Understands merchant aliases, delayed settlements      │  │
-│  │  • Provides detailed reasoning                            │  │
-│  │  • Confidence: 75-90%                                     │  │
-│  │  Result: MATCHED or UNRESOLVED                            │  │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              ↓                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Agent 5: SKIP LOGIC                                      │  │
-│  │  • Identifies valid non-matches:                          │  │
-│  │    - Payment failed (refunded to customer)                │  │
-│  │    - Awaiting settlement (bank hasn't deposited yet)      │  │
-│  │  Result: PARTIAL_VALID                                    │  │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                  VERIFICATION (Agent 6)                          │
-├─────────────────────────────────────────────────────────────────┤
-│  • Cross-validates all agent results                             │
-│  • Resolves disagreements                                        │
-│  • Assigns final status and confidence                           │
-│  • Generates plain English explanations                          │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                  ROUTING (Agent 7)                               │
-├─────────────────────────────────────────────────────────────────┤
-│  • Routes to: AUTO_APPROVED, IN_PROGRESS, or NEEDS_REVIEW       │
-│  • Builds detailed explanations with:                            │
-│    - Headline (status + confidence)                              │
-│    - Checklist (what passed/failed)                              │
-│    - Recommendation (what to do next)                            │
-│    - Risk flags (if any)                                         │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                  REPORTING (Agent 8)                             │
-├─────────────────────────────────────────────────────────────────┤
-│  • Generates JSON report with all results                        │
-│  • Saves to outputs/reports/                                     │
-│  • Includes summary statistics                                   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                  Q&A INDEXING (Agent 9)                          │
-├─────────────────────────────────────────────────────────────────┤
-│  • Indexes all transaction data in ChromaDB (vector database)    │
-│  • Enables natural language queries like:                        │
-│    "Show me all high-value unmatched payments"                   │
-│    "What happened with order #12345?"                            │
-│  • Uses semantic search for intelligent answers                  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                      BACKEND API                                 │
-├─────────────────────────────────────────────────────────────────┤
-│  FastAPI Server (port 8000)                                      │
-│  • GET /api/summary - Returns reconciliation results            │
-│  • POST /api/qa - Answers questions about transactions           │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    FRONTEND UI                                   │
-├─────────────────────────────────────────────────────────────────┤
-│  React + Vite (port 5173)                                        │
-│  • Dashboard - Summary stats and counts                          │
-│  • Review Queue - List of all transactions with filters          │
-│  • Record Detail - Detailed view of individual transactions      │
-│  • Q&A Chat - Ask questions in natural language                  │
-└─────────────────────────────────────────────────────────────────┘
+Raw CSV Files
+     │
+     ▼
+[Agent 1]  Ingestion — parse, validate, normalize all three CSVs into canonical records
+     │
+     ▼
+[Agent 2]  Exact Match — match Ledger ↔ Razorpay by order_id (zero ambiguity)
+     │
+     ▼
+[Agent 3]  Fuzzy Match — match Razorpay ↔ Bank by amount + date + text scoring
+     │                   Hungarian algorithm guarantees optimal one-to-one assignment
+     ├─ score >= 0.90 ──────────────────────────────────────────► MATCHED (auto)
+     ├─ 0.50 <= score < 0.90 ──────────────────────────────────► Agent 4
+     └─ score < 0.50 ──────────────────────────────────────────► Agent 6 (direct)
+          │
+          ▼
+[Agent 4]  LLM Reasoning — GPT-20b reasons over ambiguous pairs
+     │                      uses merchant profile + all 25 fields
+     │                      decision: match / no_match / uncertain
+     │
+     ▼
+[Agent 5]  Verifier — GPT-120b independently re-examines same data
+     │                 agrees → combined confidence used
+     │                 disagrees → UNRESOLVED (safe failure)
+     │                 skip if: confidence >= 0.95 AND amount < Rs.10,000
+     │
+     ▼
+[Agent 6]  Classifier — applies business rules, assigns final status
+     │                   MATCHED / PARTIAL / UNRESOLVED
+     │                   generates plain-English explanation for every record
+     │
+     ▼
+[Agent 7]  Reporting — builds PipelineRunResult summary + record identity check
+     │
+     ▼
+[Agent 8]  Q&A (ChromaDB) — indexes all records for semantic search queries
+     │
+     ▼
+[Agent 9]  Cash Flow Forecast — predicts pending settlement inflows (next 7/30 days)
 ```
 
 ---
 
-## Directory Structure
+## Agent 1 — Ingestion & Normalization
 
+**File:** `agents/core/ingestion_agent.py`
+
+**What it does:** Reads all three CSV files, validates every row, and converts each record into a unified `CanonicalRecord` format. Strips whitespace, normalizes date formats, coerces amounts to float, flags any rows that fail validation.
+
+**Why it matters:** Downstream agents don't deal with raw CSV quirks. They all work on the same clean data structure with consistent field names.
+
+**CanonicalRecord fields (common to all sources):**
+- `record_id` — unique ID (ledger_id / rzp_payment_id / utr_number)
+- `source` — `"ledger"` / `"razorpay"` / `"bank"`
+- `source_ref` — original ID from the source file
+- `order_id` — links ledger ↔ Razorpay (blank for bank records)
+- `amount` — normalized float (Rs.)
+- `date` — normalized Python `date` object
+- `text_field` — customer name (ledger), payment method (Razorpay), narration (bank)
+- `status` — paid / captured / failed / partially_refunded
+- `notes` — free-text from ledger (e.g. "gym membership - annual plan")
+- `raw` — original row dict for fields like `rzp_fee`, `refund_amount`
+
+**Example:**
 ```
-AI Finance Controller/
-│
-├── agents/                    # Core reconciliation logic
-│   ├── pipeline.py           # Main orchestrator - runs all agents in sequence
-│   ├── ingestion_agent.py    # Agent 1: Loads and standardizes CSV data
-│   ├── exact_match_agent.py  # Agent 2: Finds perfect matches
-│   ├── fuzzy_match_agent.py  # Agent 3: Finds approximate matches
-│   ├── llm_reasoning_agent.py # Agent 4: AI-powered complex matching
-│   ├── verifier_agent.py     # Agent 6: Cross-validates results
-│   ├── router.py             # Agent 7: Routes and explains decisions
-│   ├── reporting_agent.py    # Agent 8: Generates reports
-│   ├── qa_agent.py           # Agent 9: Q&A system with vector search
-│   ├── data_loader.py        # CSV parsing utilities
-│   ├── llm_provider.py       # LLM API interface (Groq)
-│   ├── config.py             # Configuration (models, thresholds, API keys)
-│   ├── as_of_date.py         # Date simulation for testing
-│   └── audit_logger.py       # Tracks all decisions for compliance
-│
-├── api/                       # Backend API server
-│   ├── main.py               # FastAPI application with /api/summary and /api/qa
-│   └── __init__.py
-│
-├── frontend/                  # React UI
-│   ├── src/
-│   │   ├── App.jsx           # Main app component
-│   │   ├── components/
-│   │   │   ├── Dashboard.jsx      # Summary stats view
-│   │   │   ├── ReviewQueue.jsx    # Transaction list with filters
-│   │   │   ├── RecordDetail.jsx   # Detailed transaction view
-│   │   │   └── QAChat.jsx         # Natural language Q&A interface
-│   │   └── main.jsx          # Entry point
-│   ├── package.json          # Dependencies (React, Vite)
-│   └── vite.config.js        # Vite configuration
-│
-├── data/                      # Data files
-│   ├── raw_100/              # Sample dataset (100 records)
-│   │   ├── razorpay_export.csv
-│   │   ├── bank_statement.csv
-│   │   └── internal_ledger.csv
-│   ├── ground_truth/         # Test data with known correct answers
-│   │   ├── ground_truth.json
-│   │   └── ground_truth_110.json
-│   └── generator/            # Scripts to generate test data
-│       └── generate_dataset.py
-│
-├── db/                        # Local databases
-│   ├── audit_log.db          # SQLite: tracks all agent decisions
-│   └── llm_cache.db          # SQLite: caches LLM responses
-│
-├── chroma_db/                 # Vector database for Q&A
-│   └── (ChromaDB files)      # Stores embeddings of transaction data
-│
-├── outputs/                   # Generated reports
-│   └── reports/              # JSON reports from pipeline runs
-│
-├── tests/                     # Test suite
-│   ├── test_agent5_skip_condition.py    # Tests skip logic
-│   ├── test_agent_disagreement.py       # Tests conflict resolution
-│   ├── test_as_of_date.py              # Tests date simulation
-│   ├── test_record_count_invariant.py  # Tests data integrity
-│   └── test_three_state_output.py      # Tests status classification
-│
-├── docs/                      # Documentation
-│   ├── ARCHITECTURE.md       # This file - system overview
-│   ├── HOW_IT_WORKS.md       # Detailed agent explanations
-│   ├── DATA_GUIDE.md         # Data format and field descriptions
-│   ├── BUILD_SPEC.md         # Original requirements
-│   ├── PROGRESS_AUDIT.md     # Development history
-│   ├── PLAIN_ENGLISH_GUIDE.md # User-facing explanation guide
-│   └── IMPROVEMENTS_SUMMARY.md # Recent enhancements
-│
-├── .env                       # API keys (Groq API key)
-├── .gitignore                # Git ignore rules
-├── requirements.txt          # Python dependencies
-├── README.md                 # Project overview
-└── verify_all_fixes.py       # Integration test script
+Input (ledger CSV row):
+  LED23434, ORD770487, Rahul Sharma, 5984.09, INR, 2026-02-01, card, paid, 0.0, ""
+
+Output (CanonicalRecord):
+  record_id  = "LED23434"
+  source     = "ledger"
+  order_id   = "ORD770487"
+  amount     = 5984.09
+  date       = 2026-02-01
+  text_field = "Rahul Sharma"
+  status     = "paid"
 ```
 
 ---
 
-## Data Flow
+## Agent 2 — Exact Match
 
-### 1. Input (CSV Files)
+**File:** `agents/core/exact_match_agent.py`
 
-**Razorpay Export:**
-- Payment gateway records
-- Fields: order_id, customer, amount, status, captured_at
+**What it does:** Matches Ledger records to Razorpay records using `order_id` as the key. This is a deterministic lookup — if the order_id matches, it's a confirmed pair. No scoring, no ambiguity.
 
-**Bank Statement:**
-- Actual deposits received
-- Fields: date, description (narration), debit, credit
+**Also handles:**
+- `duplicate_capture` — same order_id appears twice in Razorpay (one captured, one failed). Keeps the captured one, marks the failed one as handled.
+- `failed_payment_orphan` — both ledger and Razorpay show `failed`. No bank deposit ever expected. Routes immediately to MATCHED (no action needed).
 
-**Internal Ledger:**
-- Your accounting system records
-- Fields: date, customer, notes, debit, credit
+**Output:**
+- `matched_pairs` — confirmed Ledger+Razorpay pairs (still need bank match from Agent 3)
+- `unmatched_rzp` — Razorpay rows with no ledger counterpart (`missing_from_ledger`)
+- `all_bank` — all bank records, untouched, passed through for Agent 3
 
-### 2. Processing (Pipeline)
-
-Each CSV record flows through 9 agents:
-
+**Example:**
 ```
-Razorpay Record → Ingestion → Exact Match → Fuzzy Match → LLM Reasoning 
-                                                              ↓
-                                                         Skip Logic
-                                                              ↓
-                                        Verification → Router → Report → Q&A Index
+Ledger  : LED23434  order_id=ORD770487  amount=Rs.5,984.09
+Razorpay: pay_d0ed  order_id=ORD770487  amount=Rs.5,984.09
+
+→ Exact match on ORD770487 → matched_pair confirmed
+  (bank match still needed — goes to Agent 3)
 ```
 
-### 3. Output (JSON + UI)
-
-**JSON Report:**
-```json
-{
-  "summary": {
-    "total_records": 110,
-    "exact_match_count": 68,
-    "fuzzy_auto_count": 14,
-    "needs_review_count": 28
-  },
-  "records": [
-    {
-      "order_id": "order_12345",
-      "customer": "Rajesh Kumar",
-      "amount": 2154.58,
-      "status": "AUTO_APPROVED",
-      "sub_reason": "exact_match_gateway",
-      "confidence": 0.98,
-      "explanation": {
-        "headline": "AUTO-APPROVED — Perfect match found — 98% sure this is correct",
-        "checklist": [...],
-        "recommendation": "No action needed...",
-        "risk_flags": []
-      }
-    }
-  ]
-}
+**Failed payment example:**
 ```
+Ledger  : LED99001  order_id=ORD999  status=failed
+Razorpay: pay_xxxx  order_id=ORD999  status=failed
 
-**UI View:**
-- Dashboard shows summary stats
-- Review Queue shows all records with filters
-- Record Detail shows full explanation
-- Q&A Chat answers natural language questions
+→ Both failed → no bank deposit ever sent → MATCHED (no_action_needed)
+  Agent 3 never runs on this pair.
+```
 
 ---
 
-## Agent Details
+## Agent 3 — Fuzzy Match
 
-### Agent 1: Data Ingestion
-**Purpose:** Load and standardize data  
-**Input:** 3 CSV files  
-**Output:** CanonicalRecord objects  
-**Logic:** Parse, validate, normalize dates/amounts/text
+**File:** `agents/core/fuzzy_match_agent.py`
 
-### Agent 2: Exact Match
-**Purpose:** Find perfect matches  
-**Input:** Razorpay record  
-**Output:** Match or None  
-**Logic:** Search for order_id in bank narration using regex
+**What it does:** Takes all Razorpay records that have a confirmed ledger pair (from Agent 2) and finds their corresponding bank settlement. Uses three scoring components combined into a composite score.
 
-### Agent 3: Fuzzy Match
-**Purpose:** Find approximate matches  
-**Input:** Unmatched records from Agent 2  
-**Output:** Match with confidence score or None  
-**Logic:** 
-- Match amount exactly (±0.01)
-- Match date within ±3 days
-- Score based on date proximity
+**Scoring:**
 
-### Agent 4: LLM Reasoning
-**Purpose:** AI-powered complex matching  
-**Input:** Unmatched records from Agent 3  
-**Output:** Match with reasoning or None  
-**Logic:**
-- Send transaction details to LLM (Groq llama-3.3-70b)
-- LLM analyzes merchant aliases, settlement delays, garbled narrations
-- Returns confidence + human-readable reasoning
+| Component | Weight | How it works |
+|---|---|---|
+| Amount score | 0.70 | 1.0 if `|expected - bank| <= Rs.5`, decays to 0 at Rs.20 diff |
+| Date score | 0.20 | 1.0 same day, decays linearly to 0 at 10 days lag |
+| Text score | 0.10 | rapidfuzz character similarity (customer name vs narration) |
 
-### Agent 5: Skip Logic
-**Purpose:** Identify valid non-matches  
-**Input:** All records  
-**Output:** Skip status (failed/awaiting) or None  
-**Logic:**
-- Check if payment failed (refunded)
-- Check if awaiting settlement (no bank record yet)
+`expected = rzp_amount - rzp_fee - refund_amount`
 
-### Agent 6: Verifier
-**Purpose:** Validate and cross-check  
-**Input:** All agent results  
-**Output:** Final status + confidence  
-**Logic:**
-- Check for agent disagreements
-- Validate confidence thresholds
-- Ensure data integrity
+**Hungarian algorithm:** scipy's `linear_sum_assignment` solves the global optimal one-to-one assignment. This prevents greedy errors where a strong candidate "steals" a bank record from a slightly better match elsewhere.
 
-### Agent 7: Router
-**Purpose:** Classify and explain  
-**Input:** Verification results  
-**Output:** Routed status + explanation  
-**Logic:**
-- Route to AUTO_APPROVED, IN_PROGRESS, or NEEDS_REVIEW
-- Build plain English explanation with:
-  - Headline (status + confidence)
-  - Checklist (what passed/failed)
-  - Recommendation (next steps)
-  - Risk flags (if any)
+**Routing thresholds:**
+```
+score >= 0.90                → AUTO-MATCHED (no LLM needed)
+score 0.50–0.89              → send to Agent 4 (LLM)
+score < 0.50                 → no candidate → Agent 6 (PENDING or UNRESOLVED)
+merchant name in narration   → force to Agent 4 regardless of score
+```
 
-### Agent 8: Reporting
-**Purpose:** Generate output  
-**Input:** All routed results  
-**Output:** JSON report file  
-**Logic:**
-- Aggregate statistics
-- Format for API consumption
-- Save to disk
+**Example — auto match:**
+```
+Razorpay: pay_d0ed  Rs.5,984.09  fee=Rs.141.22  date=2026-02-01
+Expected settlement: Rs.5,842.87
 
-### Agent 9: Q&A
-**Purpose:** Enable natural language queries  
-**Input:** All transaction data  
-**Output:** ChromaDB index  
-**Logic:**
-- Generate embeddings using sentence-transformers
-- Store in vector database
-- Answer queries using semantic search
+Bank: UTR914655  Rs.5,842.87  date=2026-02-02  narration='PG SETL 189'
+
+amount_score = 1.00  (exact match)
+date_score   = 0.90  (1 day lag)
+text_score   = 0.10  ('PG SETL 189' vs 'Rahul Sharma' — no overlap)
+composite    = 0.70×1.00 + 0.20×0.90 + 0.10×0.10 = 0.89 → LLM candidate
+
+(If composite were 0.91 → auto-matched immediately, no LLM)
+```
+
+**Example — partial refund:**
+```
+Razorpay: Rs.2,154.58  fee=Rs.50.88  ledger_status=partially_refunded
+Refund amount (from ledger): Rs.500.00
+Expected settlement: 2154.58 - 50.88 - 500.00 = Rs.1,603.70
+
+Bank: Rs.1,603.70 → amount_score=1.00 → auto-matched
+```
 
 ---
 
-## Technology Stack
+## Agent 4 — LLM Reasoning
 
-### Backend
-- **Python 3.11+** - Core language
-- **FastAPI** - REST API framework
-- **Groq API** - LLM provider (llama-3.3-70b-versatile)
-- **ChromaDB** - Vector database for semantic search
-- **SQLite** - Audit logging and LLM caching
-- **Pandas** - CSV processing
-- **sentence-transformers** - Text embeddings
+**File:** `agents/core/llm_reasoning_agent.py`  
+**Model:** `openai/gpt-oss-20b` via Groq
 
-### Frontend
-- **React 18** - UI framework
-- **Vite** - Build tool
-- **CSS Modules** - Styling
-- **Fetch API** - Backend communication
+**What it does:** Handles the ambiguous 10–20% of records that fuzzy match couldn't confidently resolve. Sends the full context of a candidate pair to an LLM and gets a structured decision back.
 
-### Testing
-- **pytest** - Test framework
-- **Ground truth datasets** - Known correct answers
+**Data it sees per pair (~25 fields):**
+- Merchant profile: brand name, registered legal name, narration aliases
+- Razorpay: payment ID, amount, fee, date, order ID, status
+- Bank: UTR, amount, date, narration
+- Ledger: customer name, notes, amount, status, refund amount
+- Computed: expected settlement, amount diff, lag days
+- Fuzzy scores: amount, date, text, composite
+
+**Output schema (Agent4Result):**
+- `decision` — `match` / `no_match` / `uncertain`
+- `confidence` — 0.0–1.0
+- `semantic_similarity` — 0.0–1.0 (do these describe the same real-world event?)
+- `reasoning` — one-sentence explanation
+- `risk_flags` — list of concerns (e.g. `["high_value", "delayed_settlement"]`)
+
+**Key rules baked into the prompt:**
+- False match is worse than honest uncertain — be conservative
+- Lag 1–10 days is valid; 5–9 days is "delayed but valid"
+- Generic narration codes (IMPS, UPI, PG SETL) carry no signal either way
+- If narration contains a merchant alias → strong positive signal
+
+**What Agent 4 CAN resolve:**
+
+| Scenario | Example |
+|---|---|
+| Merchant alias in narration | Bank: `'SETL/FZ WELLNESS/032826'` → matches narration_alias `FZ WELLNESS` |
+| Garbled narration | Bank: `'IMPS/9284/RAJSH'` → consistent with customer `Rajesh Kumar` |
+| Delayed settlement | Razorpay: Mar 20 → Bank: Mar 28 (8 days) → "delayed but valid" |
+| Partial refund + garbled narration | Amount correct after subtracting refund, narration abbreviated |
+| High-value confirmation | Rs.85,000 transaction forced through LLM even if fuzzy score = 0.92 |
+| Generic UPI code | `UPI/9284726/ref` carries no text signal — LLM decides on amount+date alone |
+
+**What Agent 4 CANNOT resolve:**
+
+| Scenario | Why |
+|---|---|
+| Split payments (1 Rzp → 2 bank deposits) | Only sees one-to-one pairs; multi-leg never constructed |
+| Batch settlements (N Rzp → 1 bank) | Same — pairing is always one-to-one |
+| Amount diff > Rs.20 | Pre-filtered by Agent 3; no candidate pair ever built |
+| Bank arrives after 10 days | Pre-filtered by Agent 3 date window |
+| Missing bank record | Nothing to pair; goes directly to PENDING_SETTLEMENT |
+| Unidentified bank credit | No Razorpay anchor; Agent 4 never involved |
+
+---
+
+## Agent 5 — Verifier
+
+**File:** `agents/core/verifier_agent.py`  
+**Model:** `openai/gpt-oss-120b` via Groq (stronger model than Agent 4)
+
+**What it does:** Independently re-examines the same candidate pair that Agent 4 just decided on. It does NOT see Agent 4's reasoning — only the raw data. This prevents rubber-stamping.
+
+**Skip condition (both must be true to skip):**
+- `confidence >= 0.95` AND
+- `amount < Rs.10,000`
+
+High-value transactions are **always** verified regardless of confidence. Mid-confidence records are **always** verified regardless of amount.
+
+**Agreement logic:**
+```
+Agent 4 says: match (conf=0.88)
+Agent 5 says: match (conf=0.91)
+→ AGREE → combined_confidence = geometric mean ≈ 0.896 → MATCHED
+
+Agent 4 says: match (conf=0.75)
+Agent 5 says: uncertain (conf=0.55)
+→ DISAGREE → combined_confidence = 0.0 → UNRESOLVED
+```
+
+**LLM failure behavior:** If Agent 5's API call fails, it is treated as a disagreement → UNRESOLVED. The pipeline never crashes; it routes to a safe state.
+
+---
+
+## Agent 6 — Classifier
+
+**File:** `agents/core/classifier_agent.py`
+
+**What it does:** Takes every record — from exact match, fuzzy auto-match, LLM-verified, pending, missing, or unidentified — and assigns a final status with a human-readable explanation. This is pure deterministic business logic, no LLM.
+
+**Final statuses:**
+
+| Status | Sub-reason | Trigger |
+|---|---|---|
+| MATCHED | exact_match | Agent 2 order_id match |
+| MATCHED | no_action_needed | Both ledger + Rzp show failed |
+| MATCHED | fuzzy_auto_match | Agent 3 score >= 0.90 |
+| MATCHED | llm_confirmed | Agents 4+5 agree |
+| PARTIAL | pending_settlement | Rzp captured, no bank record yet |
+| PARTIAL | missing_from_ledger | Rzp+Bank matched, no ledger row |
+| UNRESOLVED | unidentified_bank_credit | Bank deposit with no Rzp counterpart |
+| UNRESOLVED | agent_disagreement | Agents 4 and 5 gave different decisions |
+| UNRESOLVED | no_candidates_found | No bank record within amount/date window |
+
+**Explanation generation:** For every record, Agent 6 generates a structured `Explanation` object:
+- `headline` — e.g. "MATCHED — 89% confidence"
+- `checklist` — list of passed/failed checks with plain-English labels
+- `risk_flags` — any concerns flagged by Agent 4
+- `recommendation` — action text for PARTIAL/UNRESOLVED records
+
+**Example (fuzzy match explanation):**
+```
+Headline  : MATCHED — 89% confidence
+Checklist :
+  ✓ Amount matches: Rs.5,842.87 vs Rs.5,842.87
+  ✓ Bank deposit arrived 1 day after payment — normal timing
+  ✗ Bank description 'PG SETL 189' doesn't match (matched on amount and date instead)
+```
+
+---
+
+## Agent 7 — Reporting
+
+**File:** `agents/core/reporting_agent.py`
+
+**What it does:** Assembles the final `PipelineRunResult` — a summary object with matched/partial/unresolved IDs, total runtime, LLM call count, and token usage. Also enforces the **record identity invariant**: every input record ID must appear in exactly one output status. If any record is missing or duplicated, the pipeline halts immediately.
+
+**Output summary example:**
+```
+Total records  : 110
+MATCHED        : 87  (79%)
+PARTIAL        : 14  (13%)
+UNRESOLVED     :  9  ( 8%)
+
+LLM calls made : 13
+LLM tokens used: ~20,000
+Runtime        : 2.1 min
+```
+
+---
+
+## Agent 8 — Q&A (ChromaDB)
+
+**File:** `agents/core/qa_agent.py`
+
+**What it does:** After the pipeline finishes, indexes all reconciled records into ChromaDB using sentence-transformer embeddings. This enables natural-language queries against the full transaction history.
+
+**What gets indexed per record:**
+- Customer name
+- Ledger notes (e.g. "gym membership - annual plan")
+- Bank narration (e.g. "FITZONE WELLNESS PVT LTD")
+- Status, amount, date, order ID
+
+**Why bank narration matters for search:** A query like "show me gym membership payments" works because the bank narration "FITZONE WELLNESS PVT LTD" is indexed alongside the ledger note "gym membership". Without the narration, semantic search would miss merchant-name-based matches.
+
+**Example queries it can answer:**
+```
+"Which payments are still pending?"
+"Show all transactions above Rs.50,000"
+"Find Razorpay payments that didn't match the bank"
+"What was reconciled for Rohan Patel?"
+"Are there any unidentified bank credits?"
+```
+
+---
+
+## Agent 9 — Cash Flow Forecast
+
+**File:** `agents/core/cashflow_agent.py`
+
+**What it does:** Looks at all PARTIAL/pending_settlement records (payments captured by Razorpay but not yet settled to bank) and forecasts when the money will arrive, based on the median settlement lag observed from already-MATCHED records in the same run.
+
+**Output (CashFlowForecast):**
+- `median_settlement_lag_days` — computed from actual matched pairs in this run
+- `pending_settlements` — list of pending records with expected settlement date
+- `expected_inflow_next_7_days` — total Rs. expected to arrive within the next 7 days
+- `expected_inflow_next_30_days` — total Rs. expected within 30 days
+
+**Example:**
+```
+Run date   : 2026-03-31
+Median lag from matched records: 3 days
+
+Pending record:
+  Customer   : Rohan Patel
+  Amount     : Rs.1,905.38
+  Captured   : 2026-03-29
+  Expected   : 2026-04-01  (captured + 3 days)
+  Days until : 1 day
+
+Expected inflow next 7 days  : Rs.42,800.00
+Expected inflow next 30 days : Rs.98,600.00
+```
+
+---
+
+## Data Flow Summary
+
+```
+              internal_ledger.csv
+              razorpay_export.csv      ← 3 CSV files in
+              bank_statement.csv
+                      │
+              [Agent 1] Ingest → CanonicalRecord × N
+                      │
+              [Agent 2] Exact Match (order_id key)
+                      │
+                ┌─────┴──────┐
+          matched_pairs    unmatched_rzp
+                │               │
+              [Agent 3] Fuzzy Match (amount + date + text)
+                      │
+          ┌───────────┼───────────┐
+        auto        llm        no_candidate
+       matched    candidates
+          │           │           │
+          │       [Agent 4]       │
+          │       LLM Reason      │
+          │           │           │
+          │       [Agent 5]       │
+          │       Verify          │
+          │           │           │
+          └───────────┴───────────┘
+                      │
+              [Agent 6] Classify
+              MATCHED / PARTIAL / UNRESOLVED
+              + plain-English explanation
+                      │
+              [Agent 7] Report
+              PipelineRunResult + invariant check
+                      │
+              [Agent 8] Index → ChromaDB
+                      │
+              [Agent 9] Cash Flow Forecast
+                      │
+              API (FastAPI) → React Frontend
+```
 
 ---
 
 ## Configuration
 
-### Environment Variables (.env)
-```
-GROQ_API_KEY=your_groq_api_key_here
-```
+All tunable parameters live in `agents/utils/config.py`:
 
-### Key Parameters (agents/config.py)
-```python
-GROQ_REASONING_MODEL = "llama-3.3-70b-versatile"
-GROQ_QA_MODEL = "llama-3.3-70b-versatile"
-FUZZY_AUTO_APPROVE_THRESHOLD = 0.85
-EXACT_MATCH_CONFIDENCE = 0.98
-OVERDUE_SETTLEMENT_DAYS = 5
-```
-
----
-
-## Running the System
-
-### 1. Run Full Pipeline
-```powershell
-python agents\pipeline.py
-```
-- Processes CSV files in data/raw_100/
-- Generates report in outputs/reports/
-- Indexes data in ChromaDB
-
-### 2. Start Backend API
-```powershell
-python api\main.py
-```
-- Runs on http://localhost:8000
-- Endpoints:
-  - GET /api/summary - Returns reconciliation results
-  - POST /api/qa - Answers questions
-
-### 3. Start Frontend
-```powershell
-cd frontend
-npm run dev
-```
-- Runs on http://localhost:5173
-- Dashboard, Review Queue, Q&A interface
-
-### 4. Interactive Q&A
-```powershell
-python agents\qa_agent.py --interactive
-```
-- Ask questions directly in terminal
-
----
-
-## Key Design Decisions
-
-### 1. Multi-Agent Architecture
-**Why:** Each agent has a single, clear responsibility. Easy to test, debug, and improve individually.
-
-### 2. Hybrid Matching (Template + LLM)
-**Why:** 
-- Templates for simple cases (fast, consistent, free)
-- LLM for complex cases (detailed, context-aware)
-- Best of both worlds
-
-### 3. Three-State Output
-**Why:** Clear decision boundaries
-- AUTO_APPROVED: High confidence, no review needed
-- IN_PROGRESS: Waiting for external event (settlement)
-- NEEDS_REVIEW: Low confidence or issues found
-
-### 4. Plain English Explanations
-**Why:** Non-technical reviewers need to understand AI decisions
-- No technical jargon
-- Specific to each transaction
-- Actionable recommendations
-
-### 5. Confidence Scores Everywhere
-**Why:** Transparency builds trust
-- Reviewers see how sure the AI is
-- Can prioritize low-confidence cases
-- Visible in headlines and UI
-
-### 6. Vector Database for Q&A
-**Why:** Semantic search understands intent
-- "High-value unmatched" finds relevant records even if terms don't match exactly
-- Natural language interface for non-technical users
-
-### 7. Audit Logging
-**Why:** Compliance and debugging
-- Every agent decision is logged
-- Traceable to specific rules and evidence
-- Required for financial systems
-
----
-
-## Security & Compliance
-
-### Data Privacy
-- All data processed locally (no cloud storage)
-- LLM API calls don't store transaction data (Groq policy)
-- SQLite databases encrypted at rest (optional)
-
-### Audit Trail
-- Every decision logged in db/audit_log.db
-- Includes: timestamp, agent, decision, evidence, confidence
-- Immutable log (append-only)
-
-### Access Control
-- Frontend fetches data via API (future: add authentication)
-- No direct database access from UI
-
----
-
-## Performance
-
-### Throughput
-- **110 records in ~15-30 seconds** (depending on LLM calls)
-- Agent 2 (exact): <1ms per record
-- Agent 3 (fuzzy): ~5ms per record
-- Agent 4 (LLM): 300-800ms per record (only for complex cases)
-
-### Caching
-- LLM responses cached in db/llm_cache.db
-- Identical queries return instantly
-- Reduces API costs by 70-90% on repeated runs
-
-### Scalability
-- Current: 100-1000 records/day (single-threaded)
-- Future: Parallel agent execution for 10,000+ records/day
-
----
-
-## Future Enhancements
-
-### Planned
-1. **Real-time reconciliation** - Process transactions as they arrive
-2. **Multi-tenant support** - Handle multiple businesses
-3. **Custom rules engine** - Let users define matching rules via UI
-4. **Webhook integrations** - Auto-fetch from Razorpay/bank APIs
-5. **Machine learning** - Learn from reviewer corrections
-
-### Under Consideration
-1. **Multi-currency support** - Handle USD, EUR, etc.
-2. **Partial matching** - Split/combined payments
-3. **Automated refunds** - Detect and process refunds automatically
-4. **Mobile app** - iOS/Android for on-the-go reviews
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-**Pipeline fails with "GROQ_API_KEY not found"**
-- Solution: Add API key to .env file
-
-**Frontend shows "Failed to fetch"**
-- Solution: Ensure backend is running on port 8000
-
-**ChromaDB errors**
-- Solution: Delete chroma_db/ folder and re-run pipeline
-
-**Low match rates**
-- Solution: Check CSV field mappings in config.py
-
----
-
-## Contributing
-
-### Adding a New Agent
-1. Create agents/new_agent.py
-2. Implement main logic function
-3. Add to pipeline.py sequence
-4. Write tests in tests/test_new_agent.py
-5. Update this architecture doc
-
-### Modifying Matching Logic
-1. Edit relevant agent file (exact/fuzzy/llm)
-2. Update tests to cover new cases
-3. Run full test suite: `pytest tests/`
-4. Update ground truth if behavior changes
-
----
-
-## Support
-
-For questions or issues:
-1. Check docs/HOW_IT_WORKS.md for detailed explanations
-2. Review test files for examples
-3. Check audit logs in db/audit_log.db for decision trail
-
----
-
-**Last Updated:** 2026-09-03  
-**Version:** 1.0  
-**Status:** Production-ready
+| Parameter | Value | Used by |
+|---|---|---|
+| `FUZZY_AUTO_MATCH_THRESHOLD` | 0.90 | Agent 3 — auto-match cutoff |
+| `FUZZY_MIN_CANDIDATE_THRESHOLD` | 0.50 | Agent 3 — LLM routing cutoff |
+| `AMOUNT_TOLERANCE_RUPEES` | Rs.5 | Agent 3 — amount window |
+| `SETTLEMENT_DATE_TOLERANCE_DAYS` | 10 | Agent 3 — date window |
+| `FUZZY_MATCH_WEIGHTS` | amount=0.70, date=0.20, text=0.10 | Agent 3 — score weights |
+| `HIGH_VALUE_REVIEW_THRESHOLD_RUPEES` | Rs.50,000 | Agent 3/5 — force LLM + always verify |
+| `SKIP_VERIFICATION_CONFIDENCE` | 0.95 | Agent 5 — skip threshold |
+| `SKIP_VERIFICATION_MAX_AMOUNT` | Rs.10,000 | Agent 5 — skip amount cap |
+| `LLM_CONFIDENCE_AUTO_CONFIRM` | 0.85 | Agent 6 — MATCHED threshold from LLM |
+| `OVERDUE_SETTLEMENT_DAYS` | 10 | Agent 6 — when PARTIAL becomes overdue |
+| `GROQ_REASONING_MODEL` | openai/gpt-oss-20b | Agent 4 |
+| `GROQ_VERIFIER_MODEL` | openai/gpt-oss-120b | Agent 5 |

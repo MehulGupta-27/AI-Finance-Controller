@@ -26,18 +26,18 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from agents.config import (
+from agents.utils.config import (
     MERCHANT_PROFILE,
     GROQ_REASONING_MODEL,
     HIGH_VALUE_REVIEW_THRESHOLD_RUPEES,
 )
-from agents.fuzzy_match_agent import FuzzyMatchPair
-from agents.ingestion_agent import CanonicalRecord
-from agents.llm_provider import call_llm, call_llm_batch, LLMError
+from agents.core.fuzzy_match_agent import FuzzyMatchPair
+from agents.core.ingestion_agent import CanonicalRecord
+from agents.utils.llm_provider import call_llm, call_llm_batch, LLMError
 
 logger = logging.getLogger(__name__)
 
@@ -286,11 +286,11 @@ if __name__ == "__main__":
     import time
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
-    from agents.data_loader import load_raw_data
-    from agents.ingestion_agent import ingest
-    from agents.exact_match_agent import run_exact_match
-    from agents.as_of_date import compute_as_of_date
-    from agents.fuzzy_match_agent import run_fuzzy_match
+    from agents.utils.data_loader import load_raw_data
+    from agents.core.ingestion_agent import ingest
+    from agents.core.exact_match_agent import run_exact_match
+    from agents.utils.as_of_date import compute_as_of_date
+    from agents.core.fuzzy_match_agent import run_fuzzy_match
 
     ledger_df, rzp_df, bank_df = load_raw_data()
     as_of = compute_as_of_date(ledger_df, rzp_df, bank_df)
@@ -345,6 +345,6 @@ if __name__ == "__main__":
         print(f"    decision={res.decision}  sem_sim={res.semantic_similarity:.2f}  conf={res.confidence:.2f}")
         print(f"    reasoning: {res.reasoning}")
 
-    from agents.llm_provider import cache_stats
+    from agents.utils.llm_provider import cache_stats
     print(f"\n  Cache: {cache_stats()}")
     print("\n=== OK ===\n")
